@@ -1632,6 +1632,7 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
 }
 .match-item:disabled { cursor: default; }
 .match-marca { flex: 0 0 auto; font-weight: 800; }
+.match-item code { font-size: 0.82em; overflow-wrap: anywhere; }
 
 .orden-lista { display: grid; gap: 0.5rem; }
 .orden-item {
@@ -1759,10 +1760,30 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
 .sql-script { max-height: 340px; margin-top: var(--space-2); overflow: auto; }
 .sql-chips { margin-top: var(--space-3); }
 .sql-chips .chip { min-height: 36px; }
+.sql-relacion-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding: clamp(1rem, 3vw, 1.4rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-lg);
+  background:
+    linear-gradient(135deg, var(--accent-soft), transparent 70%),
+    var(--surface);
+}
+.sql-relacion-texto { display: grid; gap: var(--space-2); align-content: start; }
+.sql-relacion-texto .eyebrow,
+.sql-relacion-texto .seccion-titulo,
+.sql-relacion-texto .texto-chico { margin: 0; }
+.sql-relacion-opciones { display: grid; gap: var(--space-2); align-content: start; justify-items: start; }
+.sql-relacion-opciones .chips { gap: 0.35rem; }
+.sql-relacion-opciones .chip { min-height: 36px; }
 
 @media (max-width: 860px) {
   .sql-hero { grid-template-columns: minmax(0, 1fr); }
   .sql-hero-datos { justify-content: flex-start; }
+  .sql-relacion-card { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* --------------------------------------------------------------------------
@@ -3807,6 +3828,63 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
     { id: '6', titulo: 'Vistas', descripcion: 'Guardar una consulta con CREATE VIEW.' }
   ];
 
+  const SQL_RELACION = [
+    {
+      id: 'tablas',
+      titulo: 'Tabla y clave primaria',
+      descripcion: 'Uní cada tabla de VENTAS con la columna que identifica sus filas.',
+      izqTitulo: 'Tabla',
+      derTitulo: 'Clave primaria',
+      pares: [
+        { izq: '`CLIENTE`', der: '`NUMCLI`' },
+        { izq: '`VENDEDOR`', der: '`CODVEND`' },
+        { izq: '`ARTICULO`', der: '`NUMART`' },
+        { izq: '`PEDIDO`', der: '`NUMPED`' },
+        { izq: '`DETALLE_PED`', der: '`NUMPED` + `NUMART`' }
+      ]
+    },
+    {
+      id: 'foraneas',
+      titulo: 'Clave foránea y referencia',
+      descripcion: 'Uní cada columna que referencia con la tabla y columna que apunta.',
+      izqTitulo: 'Columna foránea',
+      derTitulo: 'Referencia',
+      pares: [
+        { izq: '`PEDIDO.NUMCLI`', der: '`CLIENTE.NUMCLI`' },
+        { izq: '`PEDIDO.CODVEND`', der: '`VENDEDOR.CODVEND`' },
+        { izq: '`DETALLE_PED.NUMPED`', der: '`PEDIDO.NUMPED`' },
+        { izq: '`DETALLE_PED.NUMART`', der: '`ARTICULO.NUMART`' }
+      ]
+    },
+    {
+      id: 'tipos',
+      titulo: 'Columna y tipo de dato',
+      descripcion: 'Uní cada columna de VENTAS con el tipo con el que se creó.',
+      izqTitulo: 'Columna',
+      derTitulo: 'Tipo',
+      pares: [
+        { izq: '`NUMCLI`', der: '`INT`' },
+        { izq: '`NOMCLI`', der: '`CHAR(30)`' },
+        { izq: '`FECHA_PED`', der: '`DATETIME`' },
+        { izq: '`PRECIO`', der: '`DECIMAL(10,2)`' }
+      ]
+    },
+    {
+      id: 'sentencias',
+      titulo: 'Sentencia y resultado',
+      descripcion: 'Uní cada consulta con lo que devuelve en la base VENTAS.',
+      izqTitulo: 'Sentencia',
+      derTitulo: 'Resultado',
+      pares: [
+        { izq: '`SELECT COUNT(*) FROM CLIENTE;`', der: '5' },
+        { izq: '`SELECT NOMCLI FROM CLIENTE WHERE NUMCLI = 101;`', der: 'Ana Torres' },
+        { izq: '`SELECT SUM(CANTIDAD) FROM DETALLE_PED WHERE NUMPED = 1002;`', der: '7' },
+        { izq: "`SELECT DESCRIPCION FROM ARTICULO WHERE NUMART = 'A006';`", der: 'Silla ergonómica' },
+        { izq: '`SELECT COUNT(*) FROM PEDIDO WHERE NUMCLI = 101;`', der: '2' }
+      ]
+    }
+  ];
+
   function filasSql(tabla, columnas, filtro) {
     const t = SQL_VENTAS[tabla];
     if (!t) return [];
@@ -4247,7 +4325,8 @@ d) Trabajar en una sola rama para siempre
       pista: false,
       solucion: false,
       intentos: 0,
-      progreso: Object.assign({}, safeGet(K.sqlProgreso, {}) || {})
+      progreso: Object.assign({}, safeGet(K.sqlProgreso, {}) || {}),
+      relacion: null
     },
     _ultimaPantalla: null,
     _ultimaPregunta: null,
@@ -5866,6 +5945,7 @@ d) Trabajar en una sola rama para siempre
     state.sql.pista = false;
     state.sql.solucion = false;
     state.sql.intentos = 0;
+    state.sql.relacion = null;
   }
 
   function abrirSqlEjercicio(id) {
@@ -5888,6 +5968,168 @@ d) Trabajar en una sola rama para siempre
     resetearSqlEjercicio();
     state.pantalla = 'sql';
     render({ focus: '#titulo-pantalla' });
+  }
+
+  function sqlRelacionPorId(id) {
+    return SQL_RELACION.find((r) => r.id === id) || SQL_RELACION[0];
+  }
+
+  function iniciarSqlRelacion(rondaId = 'tablas') {
+    const ronda = sqlRelacionPorId(rondaId);
+    resetearSqlEjercicio();
+    const pares = shuffle(ronda.pares.map((p, i) => ({ ...p, id: i })));
+    state.sql.relacion = {
+      rondaId: ronda.id,
+      pares,
+      izquierda: shuffle(pares.map((p) => ({ id: p.id, texto: p.izq }))),
+      derecha: shuffle(pares.map((p) => ({ id: p.id, texto: p.der }))),
+      resueltos: [],
+      seleccionIzq: null,
+      seleccionDer: null,
+      errores: 0,
+      mensaje: '',
+      completado: false,
+      iniciadoEn: Date.now()
+    };
+    state.pantalla = 'sql';
+    render({ focus: '#titulo-pantalla' });
+  }
+
+  function manejarSqlMatch(lado, id) {
+    const a = state.sql.relacion;
+    if (!a || a.completado) return;
+    if (a.resueltos.includes(id)) return;
+
+    if (lado === 'izq') a.seleccionIzq = a.seleccionIzq === id ? null : id;
+    else a.seleccionDer = a.seleccionDer === id ? null : id;
+
+    if (a.seleccionIzq != null && a.seleccionDer != null) {
+      if (a.seleccionIzq === a.seleccionDer) {
+        a.resueltos.push(a.seleccionIzq);
+        a.mensaje = '¡Correcto! Ese par coincide.';
+      } else {
+        a.errores += 1;
+        a.mensaje = 'Ese par no coincide. Mirá otra vez la tabla y probá de nuevo.';
+      }
+      a.seleccionIzq = null;
+      a.seleccionDer = null;
+      if (a.resueltos.length === a.pares.length) {
+        a.completado = true;
+        a.mensaje = '¡Completaste la ronda! Podés pasar a la siguiente o mezclar de nuevo.';
+        state.sql.progreso[`relacion:${a.rondaId}`] = true;
+        safeSet(K.sqlProgreso, state.sql.progreso);
+      }
+    }
+    render({ focus: '#feedback-sql-relacion' });
+    if (a.mensaje) anunciar(a.mensaje);
+  }
+
+  function htmlSqlMatchBoton(lado, item, a) {
+    const resuelto = a.resueltos.includes(item.id);
+    const seleccionado = lado === 'izq'
+      ? a.seleccionIzq === item.id
+      : a.seleccionDer === item.id;
+    const clases = ['match-item'];
+    if (resuelto) clases.push('es-resuelta');
+    if (seleccionado) clases.push('es-seleccionada');
+    return `
+      <button type="button" class="${clases.join(' ')}" data-accion="sql-match-${lado}" data-id="${item.id}" ${resuelto ? 'disabled' : ''} aria-pressed="${seleccionado}">
+        <span>${renderInline(item.texto)}</span>
+        ${resuelto ? '<span class="match-marca" aria-hidden="true">✓</span>' : ''}
+      </button>`;
+  }
+
+  function htmlSqlRelacionCard() {
+    const hechas = SQL_RELACION.filter((r) => state.sql.progreso[`relacion:${r.id}`]).length;
+    const opciones = SQL_RELACION.map((r) => {
+      const hecha = !!state.sql.progreso[`relacion:${r.id}`];
+      return `
+        <button type="button" class="chip chip-boton" data-accion="sql-relacion" data-ronda="${escapeHtml(r.id)}" aria-label="Relacionar: ${escapeHtml(r.titulo)}${hecha ? ', completada' : ''}">
+          ${hecha ? '✓ ' : ''}${escapeHtml(r.titulo)}
+        </button>`;
+    }).join('');
+    return `
+      <section class="sql-relacion-card" aria-labelledby="sql-relacion-titulo">
+        <div class="sql-relacion-texto">
+          <p class="eyebrow">Actividad de relación</p>
+          <h2 class="seccion-titulo" id="sql-relacion-titulo">Relacioná el esquema VENTAS</h2>
+          <p class="texto-chico">Uní tablas con sus claves, claves foráneas con sus referencias y columnas con sus tipos. Todo sale de la misma base que usás en los problemas.</p>
+        </div>
+        <div class="sql-relacion-opciones">
+          <span class="badge badge-info">${hechas} de ${SQL_RELACION.length} rondas</span>
+          <div class="chips">${opciones}</div>
+        </div>
+      </section>`;
+  }
+
+  function vistaSqlRelacion() {
+    const a = state.sql.relacion;
+    if (!a) return vistaBaseDatos();
+    const ronda = sqlRelacionPorId(a.rondaId);
+    const total = a.pares.length;
+    const indice = SQL_RELACION.findIndex((r) => r.id === ronda.id);
+    const siguiente = SQL_RELACION[indice + 1] || null;
+    const esCorrecto = a.mensaje.startsWith('¡Correcto') || a.mensaje.startsWith('¡Completaste');
+
+    return `
+      <section class="pantalla" aria-labelledby="titulo-pantalla">
+        <div class="pantalla-cabecera">
+          <button type="button" class="btn btn-fantasma btn-chico" data-accion="sql-relacion-lista">← Base de Datos</button>
+          <p class="eyebrow">Relacionar · ${escapeHtml(ronda.titulo)}</p>
+          <h1 class="titulo-pagina" id="titulo-pantalla" tabindex="-1">Relacioná el esquema VENTAS</h1>
+          <p class="subtitulo">${escapeHtml(ronda.descripcion)} Elegí un elemento de la izquierda y después su pareja de la derecha.</p>
+        </div>
+
+        ${htmlActividadProgreso(a.resueltos.length, total, 'Pares resueltos')}
+
+        <div class="actividad-barra">
+          <span class="badge">Errores: ${a.errores}</span>
+          <span class="badge badge-info">${escapeHtml(ronda.izqTitulo)} → ${escapeHtml(ronda.derTitulo)}</span>
+        </div>
+
+        ${a.mensaje ? `
+          <div class="alerta ${esCorrecto ? 'alerta-ok' : 'alerta-warn'} actividad-feedback" id="feedback-sql-relacion" tabindex="-1" role="status">
+            <span class="alerta-icono" aria-hidden="true">${esCorrecto ? '✓' : '!'}</span>
+            <div>${escapeHtml(a.mensaje)}</div>
+          </div>` : '<div id="feedback-sql-relacion" tabindex="-1"></div>'}
+
+        <div class="match-grid">
+          <div class="match-columna">
+            <h2 class="seccion-titulo">${escapeHtml(ronda.izqTitulo)}</h2>
+            <div class="match-lista">${a.izquierda.map((item) => htmlSqlMatchBoton('izq', item, a)).join('')}</div>
+          </div>
+          <div class="match-columna">
+            <h2 class="seccion-titulo">${escapeHtml(ronda.derTitulo)}</h2>
+            <div class="match-lista">${a.derecha.map((item) => htmlSqlMatchBoton('der', item, a)).join('')}</div>
+          </div>
+        </div>
+
+        <div class="fila mt-4">
+          <button type="button" class="btn" data-accion="sql-relacion-reiniciar">Mezclar de nuevo</button>
+          ${a.completado ? `
+            <button type="button" class="btn btn-primario" data-accion="sql-relacion-siguiente">
+              ${siguiente ? 'Siguiente ronda →' : 'Volver a la lista'}
+            </button>` : ''}
+          <button type="button" class="btn btn-fantasma" data-accion="sql-relacion-lista">Elegir otra ronda</button>
+        </div>
+      </section>`;
+  }
+
+  function reiniciarSqlRelacion() {
+    if (state.sql.relacion) iniciarSqlRelacion(state.sql.relacion.rondaId);
+  }
+
+  function siguienteSqlRelacion() {
+    const a = state.sql.relacion;
+    if (!a) return;
+    const indice = SQL_RELACION.findIndex((r) => r.id === a.rondaId);
+    const siguiente = SQL_RELACION[indice + 1];
+    if (siguiente) {
+      iniciarSqlRelacion(siguiente.id);
+    } else {
+      volverListaSql();
+      toast('Completaste todas las rondas de relación.', 'ok');
+    }
   }
 
   function comprobarSql() {
@@ -5986,7 +6228,7 @@ d) Trabajar en una sola rama para siempre
   async function reiniciarProgresoSql() {
     const ok = await confirmar({
       titulo: 'Reiniciar progreso SQL',
-      mensaje: 'Se van a borrar las marcas de ejercicios resueltos. Los ejercicios y tus bancos no se tocan.',
+      mensaje: 'Se van a borrar las marcas de ejercicios y rondas de relación resueltas. Los ejercicios y tus bancos no se tocan.',
       textoOk: 'Reiniciar',
       peligro: true
     });
@@ -6033,7 +6275,7 @@ d) Trabajar en una sola rama para siempre
           <h3 class="tarjeta-titulo">SQL desde cero</h3>
           <span class="tarjeta-icono" aria-hidden="true">▤</span>
         </div>
-        <p class="tarjeta-texto">Practicá con la base VENTAS: SELECT, WHERE, JOIN y resúmenes. Escribí tu sentencia y comprobá el resultado.</p>
+        <p class="tarjeta-texto">Practicá con la base VENTAS: SELECT, WHERE, JOIN y resúmenes. También podés relacionar tablas, claves y tipos. Escribí tu sentencia y comprobá el resultado.</p>
         <p class="texto-xs">${resueltos} de ${total} ejercicios resueltos</p>
         <button type="button" class="btn btn-bloque mt-4" data-nav="sql">Abrir laboratorio SQL</button>
       </article>`;
@@ -6093,6 +6335,7 @@ d) Trabajar en una sola rama para siempre
   }
 
   function vistaBaseDatos() {
+    if (state.sql.relacion) return vistaSqlRelacion();
     if (state.sql.ejercicioId) return vistaSqlEjercicio();
     const lista = sqlEjerciciosFiltrados();
     const total = SQL_EJERCICIOS.length;
@@ -6126,6 +6369,8 @@ d) Trabajar en una sola rama para siempre
         </div>
 
         ${htmlSqlProgreso()}
+
+        ${htmlSqlRelacionCard()}
 
         <details class="sql-datos">
           <summary>Ver los datos de VENTAS y el script para SQL Server</summary>
@@ -7919,6 +8164,24 @@ d) Trabajar en una sola rama para siempre
         break;
       case 'sql-reiniciar':
         reiniciarProgresoSql();
+        break;
+      case 'sql-relacion':
+        iniciarSqlRelacion(el.dataset.ronda || 'tablas');
+        break;
+      case 'sql-relacion-lista':
+        volverListaSql();
+        break;
+      case 'sql-relacion-reiniciar':
+        reiniciarSqlRelacion();
+        break;
+      case 'sql-relacion-siguiente':
+        siguienteSqlRelacion();
+        break;
+      case 'sql-match-izq':
+        manejarSqlMatch('izq', Number(el.dataset.id));
+        break;
+      case 'sql-match-der':
+        manejarSqlMatch('der', Number(el.dataset.id));
         break;
       case 'calidad-siguiente':
         siguienteCalidad();
