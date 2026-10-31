@@ -1670,6 +1670,102 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
 }
 
 /* --------------------------------------------------------------------------
+   Laboratorio SQL
+   -------------------------------------------------------------------------- */
+.sql-inicio { max-width: 640px; }
+.sql-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) auto;
+  gap: var(--space-5);
+  align-items: center;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-lg);
+  background:
+    linear-gradient(135deg, var(--accent-soft), transparent 62%),
+    var(--surface);
+}
+.sql-hero-texto { min-width: 0; }
+.sql-hero-texto .seccion-titulo { margin-bottom: var(--space-2); }
+.sql-hero-datos { display: flex; gap: var(--space-4); align-items: center; }
+.sql-hero-datos .hero-dato { min-width: 4.5rem; }
+.sql-lista { display: grid; gap: var(--space-3); }
+.sql-ejercicio { display: grid; gap: var(--space-2); }
+.sql-ejercicio.es-resuelto { border-color: var(--success-line); }
+.sql-ejercicio-cabecera { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.sql-ejercicio-titulo { margin: 0; font-size: var(--text-h3); }
+.sql-ejercicio-texto { margin: 0; color: var(--text-muted); font-size: var(--text-small); }
+.sql-panel { gap: var(--space-4); }
+.sql-form { display: grid; gap: var(--space-3); }
+.sql-form textarea {
+  min-height: 150px;
+  font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  tab-size: 2;
+}
+.sql-codigo {
+  margin: 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-sm);
+  background: var(--background);
+  color: var(--text);
+  font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
+  font-size: 0.86rem;
+  line-height: 1.65;
+  white-space: pre;
+}
+.sql-solucion { display: grid; gap: var(--space-2); }
+.sql-solucion .seccion-subtitulo { margin: 0; }
+.sql-resultado { display: grid; gap: var(--space-3); padding-top: var(--space-3); border-top: 1px dashed var(--border-soft); }
+.sql-resultado .seccion-subtitulo { margin: 0; }
+.sql-tabla-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-sm);
+  background: var(--surface-elevated);
+}
+.sql-tabla { width: 100%; border-collapse: collapse; font-size: var(--text-xs); }
+.sql-tabla th,
+.sql-tabla td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  white-space: nowrap;
+}
+.sql-tabla th {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--surface);
+}
+.sql-tabla tr:last-child td { border-bottom: 0; }
+.sql-tabla tbody tr:hover { background: var(--accent-soft); }
+.sql-null { color: var(--text-faint); font-style: italic; }
+.sql-datos { margin-top: var(--space-5); border: 1px solid var(--border); border-radius: var(--radio-md); background: var(--surface); }
+.sql-datos > summary { cursor: pointer; padding: var(--space-3) var(--space-4); font-weight: 700; }
+.sql-datos > summary:hover { color: var(--accent-ink); }
+.sql-datos[open] > summary { border-bottom: 1px solid var(--border-soft); }
+.sql-datos > :not(summary) { margin-inline: var(--space-4); }
+.sql-datos > :last-child { margin-bottom: var(--space-4); }
+.sql-datos-tabla { min-width: 0; }
+.sql-datos-tabla .seccion-subtitulo { margin-bottom: var(--space-2); }
+.sql-script-detalle { margin-top: var(--space-3); }
+.sql-script-detalle > summary { cursor: pointer; color: var(--text-muted); font-size: var(--text-small); font-weight: 600; }
+.sql-script { max-height: 340px; margin-top: var(--space-2); overflow: auto; }
+.sql-chips { margin-top: var(--space-3); }
+.sql-chips .chip { min-height: 36px; }
+
+@media (max-width: 860px) {
+  .sql-hero { grid-template-columns: minmax(0, 1fr); }
+  .sql-hero-datos { justify-content: flex-start; }
+}
+
+/* --------------------------------------------------------------------------
    Responsive fino
    -------------------------------------------------------------------------- */
 @media (max-width: 640px) {
@@ -1693,9 +1789,11 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
 }
 
 @media (max-width: 380px) {
-  .nav-btn { font-size: 0.68rem; padding-inline: 0.1rem; white-space: nowrap; }
+  .nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.15rem; }
+  .nav-btn { width: 100%; min-width: 0; font-size: 0.68rem; padding-inline: 0.1rem; white-space: nowrap; }
   .hero-titulo { font-size: 1.75rem; }
   .chips { gap: 0.3rem; }
+  .sql-hero-datos { gap: var(--space-3); }
 }
 
 /* --------------------------------------------------------------------------
@@ -1736,6 +1834,7 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
         <button type="button" class="nav-btn" data-nav="inicio">Inicio</button>
         <button type="button" class="nav-btn" data-nav="estudiar">Estudiar</button>
         <button type="button" class="nav-btn" data-nav="actividades">Actividades</button>
+        <button type="button" class="nav-btn" data-nav="sql">Base de Datos</button>
         <button type="button" class="nav-btn" data-nav="historial">Historial</button>
         <button type="button" class="nav-btn" data-nav="bancos">Mis bancos</button>
       </nav>
@@ -1928,7 +2027,8 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
     tema: 'estudio.tema.v1',
     prefs: 'estudio.prefs.v1',
     ultimo: 'estudio.ultimoResultado.v1',
-    seedIngenieria: 'estudio.seed.ingenieria.v1'
+    seedIngenieria: 'estudio.seed.ingenieria.v1',
+    sqlProgreso: 'estudio.sql.progreso.v1'
   };
 
   const PREFS_DEFECTO = {
@@ -3550,6 +3650,516 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
 
 
   /* ========================================================================
+     12c. Laboratorio SQL: base VENTAS y ejercicios
+     ======================================================================== */
+
+  const SQL_VENTAS = {
+    CLIENTE: {
+      columnas: ['NUMCLI', 'NOMCLI', 'DIRCLI', 'FAX', 'E_MAIL', 'SALD_0_30', 'SALD_31_60', 'SALD_61_90'],
+      filas: [
+        [101, 'Ana Torres', 'Av. Central 123', '555-1001', 'ana@mail.com', 1200, 0, 300],
+        [102, 'Bruno Díaz', 'Calle Norte 45', '555-1002', 'bruno@mail.com', 0, 450, 0],
+        [103, 'Carla Gómez', 'Pasaje Sur 8', null, 'carla@mail.com', 0, 0, 0],
+        [104, 'Diego Ruiz', 'Av. Este 77', '555-1004', 'diego@mail.com', 250, 100, 0],
+        [105, 'Elena Paz', 'Calle Oeste 21', null, 'elena@mail.com', 0, 0, 900]
+      ]
+    },
+    VENDEDOR: {
+      columnas: ['CODVEND', 'NOMVEND', 'APELLVEND', 'DIRVEND', 'TELVEND', 'E_MAIL', 'CUOTA', 'VENTAS'],
+      filas: [
+        [1, 'Luis', 'Pérez', 'Sede Central', '555-2001', 'luis@empresa.com', 10000, 12000],
+        [2, 'María', 'López', 'Sucursal Norte', '555-2002', 'maria@empresa.com', 8000, 6500],
+        [3, 'Jorge', 'Ramírez', 'Sucursal Sur', '555-2003', 'jorge@empresa.com', 9000, 9500]
+      ]
+    },
+    ARTICULO: {
+      columnas: ['NUMART', 'DESCRIPCION', 'PRECIO', 'EXISTENCIA', 'CATEGORIA_ART'],
+      filas: [
+        ['A001', 'Monitor 24"', 150, 12, 'Hardware'],
+        ['A002', 'Teclado mecánico', 45, 30, 'Hardware'],
+        ['A003', 'Mouse inalámbrico', 25, 40, 'Hardware'],
+        ['A004', 'Office 365', 120, 100, 'Software'],
+        ['A005', 'Antivirus', 60, 50, 'Software'],
+        ['A006', 'Silla ergonómica', 200, 8, 'Mobiliario']
+      ]
+    },
+    PEDIDO: {
+      columnas: ['NUMPED', 'NUMCLI', 'CODVEND', 'FECHA_PED', 'TOT_DESC'],
+      filas: [
+        [1001, 101, 1, '2026-09-01', 0],
+        [1002, 102, 2, '2026-09-03', 10],
+        [1003, 101, 3, '2026-09-05', 0],
+        [1004, 104, 1, '2026-09-08', 5]
+      ]
+    },
+    DETALLE_PED: {
+      columnas: ['NUMPED', 'NUMART', 'CANTIDAD'],
+      filas: [
+        [1001, 'A001', 2],
+        [1001, 'A002', 3],
+        [1002, 'A003', 5],
+        [1002, 'A005', 2],
+        [1003, 'A004', 1],
+        [1003, 'A006', 2],
+        [1004, 'A001', 1],
+        [1004, 'A003', 2]
+      ]
+    }
+  };
+
+  const SQL_SCRIPT = `-- Base de práctica VENTAS para SQL Server
+-- Ejecutá este script en una base vacía llamada VENTAS.
+
+CREATE TABLE CLIENTE (
+    NUMCLI INT NOT NULL,
+    NOMCLI CHAR(30) NOT NULL,
+    DIRCLI CHAR(30),
+    FAX INT,
+    E_MAIL CHAR(30) DEFAULT ('Desconocido'),
+    SALD_0_30 DECIMAL(10,2),
+    SALD_31_60 DECIMAL(10,2),
+    SALD_61_90 DECIMAL(10,2),
+    PRIMARY KEY (NUMCLI)
+);
+
+CREATE TABLE VENDEDOR (
+    CODVEND INT NOT NULL,
+    NOMVEND CHAR(20) NOT NULL,
+    APELLVEND CHAR(20) NOT NULL,
+    DIRVEND CHAR(30),
+    TELVEND INT,
+    E_MAIL CHAR(30) DEFAULT ('Desconocido'),
+    CUOTA DECIMAL(10,2),
+    VENTAS DECIMAL(10,2),
+    PRIMARY KEY (CODVEND)
+);
+
+CREATE TABLE ARTICULO (
+    NUMART CHAR(4) NOT NULL PRIMARY KEY,
+    DESCRIPCION CHAR(30),
+    PRECIO DECIMAL(10,2) NOT NULL CHECK (PRECIO >= 0.00),
+    EXISTENCIA INT,
+    CATEGORIA_ART CHAR(15)
+);
+
+CREATE TABLE PEDIDO (
+    NUMPED INT NOT NULL PRIMARY KEY,
+    NUMCLI INT NOT NULL,
+    CODVEND INT NOT NULL,
+    FECHA_PED DATETIME,
+    TOT_DESC DECIMAL(10,2),
+    FOREIGN KEY (NUMCLI) REFERENCES CLIENTE(NUMCLI),
+    FOREIGN KEY (CODVEND) REFERENCES VENDEDOR(CODVEND)
+);
+
+CREATE TABLE DETALLE_PED (
+    NUMPED INT NOT NULL,
+    NUMART CHAR(4) NOT NULL,
+    CANTIDAD INT CHECK (CANTIDAD >= 0),
+    PRIMARY KEY (NUMPED, NUMART),
+    FOREIGN KEY (NUMPED) REFERENCES PEDIDO(NUMPED),
+    FOREIGN KEY (NUMART) REFERENCES ARTICULO(NUMART)
+);
+
+INSERT INTO CLIENTE (NUMCLI, NOMCLI, DIRCLI, FAX, E_MAIL, SALD_0_30, SALD_31_60, SALD_61_90) VALUES
+(101, 'Ana Torres', 'Av. Central 123', 5551001, 'ana@mail.com', 1200.00, 0.00, 300.00),
+(102, 'Bruno Díaz', 'Calle Norte 45', 5551002, 'bruno@mail.com', 0.00, 450.00, 0.00),
+(103, 'Carla Gómez', 'Pasaje Sur 8', NULL, 'carla@mail.com', 0.00, 0.00, 0.00),
+(104, 'Diego Ruiz', 'Av. Este 77', 5551004, 'diego@mail.com', 250.00, 100.00, 0.00),
+(105, 'Elena Paz', 'Calle Oeste 21', NULL, 'elena@mail.com', 0.00, 0.00, 900.00);
+
+INSERT INTO VENDEDOR (CODVEND, NOMVEND, APELLVEND, DIRVEND, TELVEND, E_MAIL, CUOTA, VENTAS) VALUES
+(1, 'Luis', 'Pérez', 'Sede Central', 5552001, 'luis@empresa.com', 10000.00, 12000.00),
+(2, 'María', 'López', 'Sucursal Norte', 5552002, 'maria@empresa.com', 8000.00, 6500.00),
+(3, 'Jorge', 'Ramírez', 'Sucursal Sur', 5552003, 'jorge@empresa.com', 9000.00, 9500.00);
+
+INSERT INTO ARTICULO (NUMART, DESCRIPCION, PRECIO, EXISTENCIA, CATEGORIA_ART) VALUES
+('A001', 'Monitor 24"', 150.00, 12, 'Hardware'),
+('A002', 'Teclado mecánico', 45.00, 30, 'Hardware'),
+('A003', 'Mouse inalámbrico', 25.00, 40, 'Hardware'),
+('A004', 'Office 365', 120.00, 100, 'Software'),
+('A005', 'Antivirus', 60.00, 50, 'Software'),
+('A006', 'Silla ergonómica', 200.00, 8, 'Mobiliario');
+
+INSERT INTO PEDIDO (NUMPED, NUMCLI, CODVEND, FECHA_PED, TOT_DESC) VALUES
+(1001, 101, 1, '2026-09-01', 0.00),
+(1002, 102, 2, '2026-09-03', 10.00),
+(1003, 101, 3, '2026-09-05', 0.00),
+(1004, 104, 1, '2026-09-08', 5.00);
+
+INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
+(1001, 'A001', 2),
+(1001, 'A002', 3),
+(1002, 'A003', 5),
+(1002, 'A005', 2),
+(1003, 'A004', 1),
+(1003, 'A006', 2),
+(1004, 'A001', 1),
+(1004, 'A003', 2);
+`;
+
+  const SQL_MODULOS = [
+    { id: '1', titulo: 'Base y tablas', descripcion: 'Crear la base y las tablas en el orden correcto.' },
+    { id: '2', titulo: 'Ligaduras', descripcion: 'PRIMARY KEY, FOREIGN KEY, CHECK y DEFAULT.' },
+    { id: '3', titulo: 'Insertar y modificar', descripcion: 'INSERT, UPDATE y DELETE.' },
+    { id: '4', titulo: 'Consultar', descripcion: 'SELECT, WHERE, BETWEEN, LIKE, IS NULL y ORDER BY.' },
+    { id: '5', titulo: 'Relacionar y resumir', descripcion: 'INNER JOIN, GROUP BY, HAVING y funciones de agregación.' },
+    { id: '6', titulo: 'Vistas', descripcion: 'Guardar una consulta con CREATE VIEW.' }
+  ];
+
+  function filasSql(tabla, columnas, filtro) {
+    const t = SQL_VENTAS[tabla];
+    if (!t) return [];
+    return t.filas
+      .map((fila) => Object.fromEntries(t.columnas.map((c, i) => [c, fila[i]])))
+      .filter(filtro || (() => true))
+      .map((obj) => columnas.map((c) => obj[c]));
+  }
+
+  function resultadoSql(tabla, columnas, filtro) {
+    return { columnas, filas: filasSql(tabla, columnas, filtro) };
+  }
+
+  const SQL_EJERCICIOS = [
+    {
+      id: 'sql-01',
+      modulo: '1',
+      titulo: 'Crear la tabla CATEGORIA',
+      tipo: 'accion',
+      conceptos: ['CREATE TABLE', 'PRIMARY KEY'],
+      enunciado: 'Creá una tabla **CATEGORIA** con dos columnas: `ID_CATEGORIA INT` como clave primaria y `NOMBRE VARCHAR(30) NOT NULL`.',
+      pista: 'La forma general es `CREATE TABLE nombre (columna tipo restricción, ...)`. La clave primaria puede ir al lado de la columna.',
+      solucion: 'CREATE TABLE CATEGORIA (ID_CATEGORIA INT PRIMARY KEY, NOMBRE VARCHAR(30) NOT NULL);',
+      requiere: ['create table categoria', 'id_categoria int', 'primary key', 'nombre varchar(30)', 'not null'],
+      resultado: { mensaje: 'Crea la tabla CATEGORIA. No devuelve filas: es una sentencia DDL.' },
+      explicacion: 'PRIMARY KEY identifica cada fila y no permite NULL. NOT NULL obliga a completar el nombre.'
+    },
+    {
+      id: 'sql-02',
+      modulo: '1',
+      titulo: 'Crear PEDIDO con dos claves foráneas',
+      tipo: 'accion',
+      conceptos: ['CREATE TABLE', 'FOREIGN KEY', 'orden de creación'],
+      enunciado: 'Creá la tabla **PEDIDO** con `NUMPED INT` como clave primaria, `NUMCLI INT`, `CODVEND INT`, `FECHA_PED DATETIME` y `TOT_DESC DECIMAL(10,2)`. Relacioná `NUMCLI` con `CLIENTE` y `CODVEND` con `VENDEDOR`.',
+      pista: 'Primero tienen que existir CLIENTE y VENDEDOR. Cada FOREIGN KEY termina con `REFERENCES tabla(columna)`.',
+      solucion: 'CREATE TABLE PEDIDO (NUMPED INT PRIMARY KEY, NUMCLI INT NOT NULL, CODVEND INT NOT NULL, FECHA_PED DATETIME, TOT_DESC DECIMAL(10,2), FOREIGN KEY (NUMCLI) REFERENCES CLIENTE(NUMCLI), FOREIGN KEY (CODVEND) REFERENCES VENDEDOR(CODVEND));',
+      requiere: ['create table pedido', 'numped int', 'numcli int', 'codvend int', 'fecha_ped datetime', 'tot_desc decimal(10,2)', 'foreign key(numcli)references cliente(numcli)', 'foreign key(codvend)references vendedor(codvend)'],
+      resultado: { mensaje: 'Crea la tabla PEDIDO. Si CLIENTE o VENDEDOR no existen, SQL Server rechaza la clave foránea.' },
+      explicacion: 'El orden importa: primero las tablas referenciadas, después la que las referencia. Así se respeta la integridad referencial.'
+    },
+    {
+      id: 'sql-03',
+      modulo: '2',
+      titulo: 'Crear ARTICULO con CHECK',
+      tipo: 'accion',
+      conceptos: ['CREATE TABLE', 'CHECK', 'PRIMARY KEY'],
+      enunciado: 'Creá **ARTICULO** con `NUMART CHAR(4)` como clave primaria, `DESCRIPCION CHAR(30)`, `PRECIO DECIMAL(10,2) NOT NULL`, `EXISTENCIA INT` y `CATEGORIA_ART CHAR(15)`. Agregá un CHECK para que el precio no pueda ser negativo.',
+      pista: 'El CHECK se escribe como `CHECK (PRECIO >= 0)`. Podés ponerlo al lado de la columna o al final de la tabla.',
+      solucion: 'CREATE TABLE ARTICULO (NUMART CHAR(4) PRIMARY KEY, DESCRIPCION CHAR(30), PRECIO DECIMAL(10,2) NOT NULL CHECK (PRECIO >= 0), EXISTENCIA INT, CATEGORIA_ART CHAR(15));',
+      requiere: ['create table articulo', 'numart char(4)', 'descripcion char(30)', 'precio decimal(10,2)', 'existencia int', 'categoria_art char(15)', 'primary key', 'check(precio>=0)'],
+      resultado: { mensaje: 'Crea la tabla ARTICULO con la validación de precio. No devuelve filas.' },
+      explicacion: 'CHECK deja la validación en manos del DBMS: si intentás insertar un precio negativo, la sentencia falla.'
+    },
+    {
+      id: 'sql-04',
+      modulo: '2',
+      titulo: 'Clave primaria compuesta',
+      tipo: 'accion',
+      conceptos: ['PRIMARY KEY compuesta', 'FOREIGN KEY', 'CHECK'],
+      enunciado: 'Creá **DETALLE_PED** con `NUMPED INT`, `NUMART CHAR(4)` y `CANTIDAD INT` con CHECK mayor o igual a 0. La clave primaria es la combinación `NUMPED + NUMART`. Relacioná `NUMPED` con `PEDIDO` y `NUMART` con `ARTICULO`.',
+      pista: 'Una clave compuesta se declara al final: `PRIMARY KEY (NUMPED, NUMART)`.',
+      solucion: 'CREATE TABLE DETALLE_PED (NUMPED INT NOT NULL, NUMART CHAR(4) NOT NULL, CANTIDAD INT CHECK (CANTIDAD >= 0), PRIMARY KEY (NUMPED, NUMART), FOREIGN KEY (NUMPED) REFERENCES PEDIDO(NUMPED), FOREIGN KEY (NUMART) REFERENCES ARTICULO(NUMART));',
+      requiere: ['create table detalle_ped', 'numped int', 'numart char(4)', 'cantidad int', 'check(cantidad>=0)', 'primary key(numped,numart)', 'foreign key(numped)references pedido(numped)', 'foreign key(numart)references articulo(numart)'],
+      resultado: { mensaje: 'Crea la tabla DETALLE_PED. La combinación pedido + artículo no se puede repetir.' },
+      explicacion: 'La PK compuesta evita cargar dos veces el mismo artículo en el mismo pedido. Las dos FK apuntan a las tablas que ya deben existir.'
+    },
+    {
+      id: 'sql-05',
+      modulo: '3',
+      titulo: 'Insertar un cliente',
+      tipo: 'accion',
+      conceptos: ['INSERT INTO', 'VALUES', 'NULL'],
+      enunciado: 'Insertá un cliente nuevo: `NUMCLI 106`, `NOMCLI \'Fabián Soto\'`, `DIRCLI \'Calle Nueva 10\'`, `FAX NULL`, `E_MAIL \'fabian@mail.com\'` y los tres saldos en 0.',
+      pista: 'La forma es `INSERT INTO tabla (columnas) VALUES (valores)`. Los textos van entre comillas simples y NULL va sin comillas.',
+      solucion: "INSERT INTO CLIENTE (NUMCLI, NOMCLI, DIRCLI, FAX, E_MAIL, SALD_0_30, SALD_31_60, SALD_61_90) VALUES (106, 'Fabián Soto', 'Calle Nueva 10', NULL, 'fabian@mail.com', 0, 0, 0);",
+      requiere: ['insert into cliente', 'values', '106', "'fabian soto'", "'calle nueva 10'", 'null', "'fabian@mail.com'"],
+      resultado: { mensaje: 'Inserta 1 fila en CLIENTE. No devuelve un conjunto de resultados.' },
+      explicacion: 'INSERT agrega una fila. Si respetás las columnas y los tipos, la clave primaria y las restricciones se validan solas.'
+    },
+    {
+      id: 'sql-06',
+      modulo: '3',
+      titulo: 'Actualizar un saldo',
+      tipo: 'accion',
+      conceptos: ['UPDATE', 'SET', 'WHERE'],
+      enunciado: 'El cliente **101** pagó su deuda de 0 a 30 días. Poné `SALD_0_30` en 0.',
+      pista: 'UPDATE necesita `SET columna = valor` y, casi siempre, un `WHERE` para no tocar todas las filas.',
+      solucion: 'UPDATE CLIENTE SET SALD_0_30 = 0 WHERE NUMCLI = 101;',
+      requiere: ['update cliente', 'set sald_0_30=0', 'where numcli=101'],
+      resultado: { mensaje: 'Actualiza 1 fila en CLIENTE.' },
+      explicacion: 'Sin WHERE, SQL Server actualizaría el saldo de todos los clientes. El WHERE limita el cambio a una fila.'
+    },
+    {
+      id: 'sql-07',
+      modulo: '3',
+      titulo: 'Eliminar un cliente sin pedidos',
+      tipo: 'accion',
+      conceptos: ['DELETE', 'WHERE', 'integridad referencial'],
+      enunciado: 'Eliminá el cliente **105**, que no tiene pedidos.',
+      pista: 'La forma es `DELETE FROM tabla WHERE condición`. Si el cliente tuviera pedidos, la FK impediría borrarlo.',
+      solucion: 'DELETE FROM CLIENTE WHERE NUMCLI = 105;',
+      requiere: ['delete from cliente', 'where numcli=105'],
+      resultado: { mensaje: 'Elimina 1 fila de CLIENTE.' },
+      explicacion: 'La integridad referencial protege los datos: no podés borrar un cliente que todavía tiene pedidos asociados.'
+    },
+    {
+      id: 'sql-08',
+      modulo: '4',
+      titulo: 'Todos los clientes',
+      tipo: 'select',
+      conceptos: ['SELECT *', 'FROM'],
+      enunciado: 'El gerente quiere ver la lista completa de clientes. Mostrá **todas las columnas y todas las filas** de `CLIENTE`.',
+      pista: 'El asterisco `*` significa “todas las columnas”. La tabla se llama CLIENTE.',
+      solucion: 'SELECT * FROM CLIENTE;',
+      variantes: ['SELECT * FROM dbo.CLIENTE;'],
+      resultado: resultadoSql('CLIENTE', SQL_VENTAS.CLIENTE.columnas),
+      explicacion: '`SELECT * FROM CLIENTE` devuelve las 5 filas y las 8 columnas de la tabla.'
+    },
+    {
+      id: 'sql-09',
+      modulo: '4',
+      titulo: 'Nombre y correo',
+      tipo: 'select',
+      conceptos: ['SELECT columnas', 'FROM'],
+      enunciado: 'Para una campaña necesitás solo el **número, nombre y correo** de cada cliente.',
+      pista: 'Después de SELECT escribí las columnas separadas por comas. No hace falta traer todas.',
+      solucion: 'SELECT NUMCLI, NOMCLI, E_MAIL FROM CLIENTE;',
+      variantes: ['SELECT CLIENTE.NUMCLI, CLIENTE.NOMCLI, CLIENTE.E_MAIL FROM CLIENTE;'],
+      resultado: resultadoSql('CLIENTE', ['NUMCLI', 'NOMCLI', 'E_MAIL']),
+      explicacion: 'Elegir columnas reduce el ruido y el trabajo del servidor. Solo ves lo que necesitás.'
+    },
+    {
+      id: 'sql-10',
+      modulo: '4',
+      titulo: 'Artículos pedidos sin repetir',
+      tipo: 'select',
+      conceptos: ['DISTINCT', 'ORDER BY'],
+      enunciado: 'Mostrá los códigos de artículo que aparecen en `DETALLE_PED`, **sin repetir**, ordenados de menor a mayor.',
+      pista: 'DISTINCT elimina filas duplicadas. ORDER BY ordena; ASC es el orden por defecto.',
+      solucion: 'SELECT DISTINCT NUMART FROM DETALLE_PED ORDER BY NUMART;',
+      variantes: ['SELECT DISTINCT NUMART FROM DETALLE_PED ORDER BY NUMART ASC;', 'SELECT DISTINCT DETALLE_PED.NUMART FROM DETALLE_PED ORDER BY DETALLE_PED.NUMART;'],
+      resultado: { columnas: ['NUMART'], filas: [['A001'], ['A002'], ['A003'], ['A004'], ['A005'], ['A006']] },
+      explicacion: 'Sin DISTINCT verías 8 filas porque A001 y A003 aparecen en más de un pedido. Con DISTINCT quedan 6 códigos únicos.'
+    },
+    {
+      id: 'sql-11',
+      modulo: '4',
+      titulo: 'Clientes con deuda',
+      tipo: 'select',
+      conceptos: ['WHERE', 'operadores de comparación'],
+      enunciado: '¿Qué clientes deben algo en la franja de **0 a 30 días**? Mostrá nombre y saldo de esa franja.',
+      pista: 'Filtrá con `WHERE SALD_0_30 > 0`. La condición va después de FROM.',
+      solucion: 'SELECT NOMCLI, SALD_0_30 FROM CLIENTE WHERE SALD_0_30 > 0;',
+      variantes: ['SELECT NOMCLI, SALD_0_30 FROM CLIENTE WHERE SALD_0_30 <> 0;', 'SELECT NOMCLI, SALD_0_30 FROM CLIENTE WHERE SALD_0_30 != 0;', 'SELECT NOMCLI, SALD_0_30 FROM CLIENTE WHERE NOT SALD_0_30 = 0;'],
+      resultado: resultadoSql('CLIENTE', ['NOMCLI', 'SALD_0_30'], (r) => r.SALD_0_30 > 0),
+      explicacion: 'Ana debe 1200 y Diego 250. Los demás tienen cero en esa franja.'
+    },
+    {
+      id: 'sql-12',
+      modulo: '4',
+      titulo: 'Hardware barato',
+      tipo: 'select',
+      conceptos: ['WHERE', 'AND'],
+      enunciado: 'Listá descripción y precio de los artículos de **Hardware** que cuesten **menos de 100**.',
+      pista: 'Necesitás dos condiciones: categoría igual a Hardware y precio menor a 100. Unilas con AND.',
+      solucion: "SELECT DESCRIPCION, PRECIO FROM ARTICULO WHERE CATEGORIA_ART = 'Hardware' AND PRECIO < 100;",
+      variantes: ["SELECT DESCRIPCION, PRECIO FROM ARTICULO WHERE PRECIO < 100 AND CATEGORIA_ART = 'Hardware';"],
+      resultado: resultadoSql('ARTICULO', ['DESCRIPCION', 'PRECIO'], (r) => r.CATEGORIA_ART === 'Hardware' && r.PRECIO < 100),
+      explicacion: 'AND exige que se cumplan las dos condiciones. El monitor cuesta 150 y la silla no es Hardware, así que quedan solo dos artículos.'
+    },
+    {
+      id: 'sql-13',
+      modulo: '4',
+      titulo: 'Pedidos de la primera semana',
+      tipo: 'select',
+      conceptos: ['BETWEEN', 'fechas'],
+      enunciado: 'Mostrá número y fecha de los pedidos entre el **1 y el 5 de septiembre de 2026**, inclusive.',
+      pista: 'BETWEEN incluye los dos extremos. Las fechas van entre comillas simples.',
+      solucion: "SELECT NUMPED, FECHA_PED FROM PEDIDO WHERE FECHA_PED BETWEEN '2026-09-01' AND '2026-09-05';",
+      variantes: ["SELECT NUMPED, FECHA_PED FROM PEDIDO WHERE FECHA_PED >= '2026-09-01' AND FECHA_PED <= '2026-09-05';"],
+      resultado: resultadoSql('PEDIDO', ['NUMPED', 'FECHA_PED'], (r) => r.FECHA_PED >= '2026-09-01' && r.FECHA_PED <= '2026-09-05'),
+      explicacion: 'BETWEEN es inclusivo: entran el 1 y el 5. El pedido 1004 queda afuera porque es del 8.'
+    },
+    {
+      id: 'sql-14',
+      modulo: '4',
+      titulo: 'Clientes sin fax',
+      tipo: 'select',
+      conceptos: ['IS NULL', 'NULL'],
+      enunciado: '¿Qué clientes no tienen fax registrado? Mostrá nombre y fax.',
+      pista: 'NULL no se compara con `=`. Para preguntar si un valor es nulo se usa `IS NULL`.',
+      solucion: 'SELECT NOMCLI, FAX FROM CLIENTE WHERE FAX IS NULL;',
+      resultado: resultadoSql('CLIENTE', ['NOMCLI', 'FAX'], (r) => r.FAX === null),
+      explicacion: 'Carla y Elena tienen FAX NULL. `WHERE FAX = NULL` no devolvería nada: NULL no es igual a nada, ni siquiera a otro NULL.'
+    },
+    {
+      id: 'sql-15',
+      modulo: '4',
+      titulo: 'Ranking de vendedores',
+      tipo: 'select',
+      conceptos: ['ORDER BY', 'DESC'],
+      enunciado: 'Mostrá nombre, apellido y ventas de los vendedores, del que **más vendió** al que **menos vendió**.',
+      pista: 'ORDER BY va al final. DESC ordena de mayor a menor.',
+      solucion: 'SELECT NOMVEND, APELLVEND, VENTAS FROM VENDEDOR ORDER BY VENTAS DESC;',
+      resultado: {
+        columnas: ['NOMVEND', 'APELLVEND', 'VENTAS'],
+        filas: [
+          ['Luis', 'Pérez', 12000],
+          ['Jorge', 'Ramírez', 9500],
+          ['María', 'López', 6500]
+        ]
+      },
+      explicacion: 'Luis vendió 12000, Jorge 9500 y María 6500. Sin DESC, el orden sería ascendente.'
+    },
+    {
+      id: 'sql-16',
+      modulo: '4',
+      titulo: 'Saldo total por cliente',
+      tipo: 'select',
+      conceptos: ['columnas calculadas', 'AS'],
+      enunciado: 'Calculá el **saldo total** de cada cliente sumando las tres franjas. Mostrá número, nombre y saldo total.',
+      pista: 'Podés sumar columnas dentro del SELECT: `(SALD_0_30 + SALD_31_60 + SALD_61_90)`. Usá `AS` para darle nombre a la columna calculada.',
+      solucion: 'SELECT NUMCLI, NOMCLI, (SALD_0_30 + SALD_31_60 + SALD_61_90) AS SALDO_TOTAL FROM CLIENTE;',
+      variantes: ['SELECT NUMCLI, NOMCLI, SALD_0_30 + SALD_31_60 + SALD_61_90 FROM CLIENTE;'],
+      resultado: {
+        columnas: ['NUMCLI', 'NOMCLI', 'SALDO_TOTAL'],
+        filas: [
+          [101, 'Ana Torres', 1500],
+          [102, 'Bruno Díaz', 450],
+          [103, 'Carla Gómez', 0],
+          [104, 'Diego Ruiz', 350],
+          [105, 'Elena Paz', 900]
+        ]
+      },
+      explicacion: 'La suma se calcula fila por fila. No modifica la tabla: es una columna virtual que solo existe en el resultado.'
+    },
+    {
+      id: 'sql-17',
+      modulo: '5',
+      titulo: 'Pedidos con nombre del cliente',
+      tipo: 'select',
+      conceptos: ['INNER JOIN', 'clave foránea'],
+      enunciado: 'Mostrá número de pedido, nombre del cliente y fecha de cada pedido.',
+      pista: 'La columna que une CLIENTE y PEDIDO es NUMCLI. Usá `INNER JOIN PEDIDO ON CLIENTE.NUMCLI = PEDIDO.NUMCLI`.',
+      solucion: 'SELECT PEDIDO.NUMPED, CLIENTE.NOMCLI, PEDIDO.FECHA_PED FROM CLIENTE INNER JOIN PEDIDO ON CLIENTE.NUMCLI = PEDIDO.NUMCLI;',
+      variantes: ['SELECT PEDIDO.NUMPED, CLIENTE.NOMCLI, PEDIDO.FECHA_PED FROM CLIENTE, PEDIDO WHERE CLIENTE.NUMCLI = PEDIDO.NUMCLI;', 'SELECT PEDIDO.NUMPED, CLIENTE.NOMCLI, PEDIDO.FECHA_PED FROM PEDIDO INNER JOIN CLIENTE ON PEDIDO.NUMCLI = CLIENTE.NUMCLI;'],
+      resultado: {
+        columnas: ['NUMPED', 'NOMCLI', 'FECHA_PED'],
+        filas: [
+          [1001, 'Ana Torres', '2026-09-01'],
+          [1002, 'Bruno Díaz', '2026-09-03'],
+          [1003, 'Ana Torres', '2026-09-05'],
+          [1004, 'Diego Ruiz', '2026-09-08']
+        ]
+      },
+      explicacion: 'INNER JOIN devuelve solo las filas que tienen correspondencia en ambas tablas. Acá todos los pedidos tienen cliente.'
+    },
+    {
+      id: 'sql-18',
+      modulo: '5',
+      titulo: 'Detalle de cada pedido',
+      tipo: 'select',
+      conceptos: ['INNER JOIN de 3 tablas'],
+      enunciado: 'Mostrá número de pedido, descripción del artículo y cantidad para cada línea de `DETALLE_PED`.',
+      pista: 'Uní PEDIDO con DETALLE_PED por NUMPED, y DETALLE_PED con ARTICULO por NUMART.',
+      solucion: 'SELECT PEDIDO.NUMPED, ARTICULO.DESCRIPCION, DETALLE_PED.CANTIDAD FROM PEDIDO INNER JOIN DETALLE_PED ON PEDIDO.NUMPED = DETALLE_PED.NUMPED INNER JOIN ARTICULO ON DETALLE_PED.NUMART = ARTICULO.NUMART;',
+      variantes: ['SELECT PEDIDO.NUMPED, ARTICULO.DESCRIPCION, DETALLE_PED.CANTIDAD FROM PEDIDO, DETALLE_PED, ARTICULO WHERE PEDIDO.NUMPED = DETALLE_PED.NUMPED AND DETALLE_PED.NUMART = ARTICULO.NUMART;'],
+      resultado: {
+        columnas: ['NUMPED', 'DESCRIPCION', 'CANTIDAD'],
+        filas: [
+          [1001, 'Monitor 24"', 2],
+          [1001, 'Teclado mecánico', 3],
+          [1002, 'Mouse inalámbrico', 5],
+          [1002, 'Antivirus', 2],
+          [1003, 'Office 365', 1],
+          [1003, 'Silla ergonómica', 2],
+          [1004, 'Monitor 24"', 1],
+          [1004, 'Mouse inalámbrico', 2]
+        ]
+      },
+      explicacion: 'Cada JOIN agrega una tabla y una condición. Sin la condición ON, se mezclarían todas las filas entre sí.'
+    },
+    {
+      id: 'sql-19',
+      modulo: '5',
+      titulo: 'Total vendido por pedido',
+      tipo: 'select',
+      conceptos: ['SUM', 'GROUP BY', 'columnas calculadas'],
+      enunciado: 'Calculá el total vendido en cada pedido: cantidad por precio. Mostrá número de pedido y total.',
+      pista: 'Necesitás SUM sobre `CANTIDAD * PRECIO` y agrupar por pedido con GROUP BY.',
+      solucion: 'SELECT PEDIDO.NUMPED, SUM(DETALLE_PED.CANTIDAD * ARTICULO.PRECIO) AS TOTAL FROM PEDIDO INNER JOIN DETALLE_PED ON PEDIDO.NUMPED = DETALLE_PED.NUMPED INNER JOIN ARTICULO ON DETALLE_PED.NUMART = ARTICULO.NUMART GROUP BY PEDIDO.NUMPED;',
+      variantes: ['SELECT PEDIDO.NUMPED, SUM(ARTICULO.PRECIO * DETALLE_PED.CANTIDAD) AS TOTAL FROM PEDIDO INNER JOIN DETALLE_PED ON PEDIDO.NUMPED = DETALLE_PED.NUMPED INNER JOIN ARTICULO ON DETALLE_PED.NUMART = ARTICULO.NUMART GROUP BY PEDIDO.NUMPED;'],
+      resultado: {
+        columnas: ['NUMPED', 'TOTAL'],
+        filas: [[1001, 435], [1002, 245], [1003, 520], [1004, 200]]
+      },
+      explicacion: 'GROUP BY arma un grupo por pedido y SUM suma las líneas de cada grupo. El total no está guardado: se calcula al consultar.'
+    },
+    {
+      id: 'sql-20',
+      modulo: '5',
+      titulo: 'Clientes recurrentes',
+      tipo: 'select',
+      conceptos: ['COUNT', 'GROUP BY', 'HAVING'],
+      enunciado: 'Mostrá el nombre de los clientes que hicieron **más de un pedido** y cuántos pedidos hicieron.',
+      pista: 'Agrupá por cliente con GROUP BY y filtrá los grupos con HAVING COUNT(*) > 1. HAVING es para grupos; WHERE es para filas.',
+      solucion: 'SELECT CLIENTE.NOMCLI, COUNT(*) AS CANTIDAD FROM CLIENTE INNER JOIN PEDIDO ON CLIENTE.NUMCLI = PEDIDO.NUMCLI GROUP BY CLIENTE.NOMCLI HAVING COUNT(*) > 1;',
+      variantes: ['SELECT CLIENTE.NOMCLI, COUNT(PEDIDO.NUMPED) AS CANTIDAD FROM CLIENTE INNER JOIN PEDIDO ON CLIENTE.NUMCLI = PEDIDO.NUMCLI GROUP BY CLIENTE.NOMCLI HAVING COUNT(PEDIDO.NUMPED) > 1;'],
+      resultado: { columnas: ['NOMCLI', 'CANTIDAD'], filas: [['Ana Torres', 2]] },
+      explicacion: 'Solo Ana tiene dos pedidos (1001 y 1003). HAVING se evalúa después de agrupar y contar.'
+    },
+    {
+      id: 'sql-21',
+      modulo: '5',
+      titulo: 'Detalle completo con 5 tablas',
+      tipo: 'select',
+      conceptos: ['INNER JOIN de 5 tablas', 'ORDER BY'],
+      enunciado: 'Mostrá pedido, cliente, apellido del vendedor, descripción del artículo, cantidad y total (precio por cantidad) para cada línea. Ordená por número de pedido.',
+      pista: 'Necesitás CLIENTE, PEDIDO, VENDEDOR, DETALLE_PED y ARTICULO. Uní cada tabla por su clave y ordená al final.',
+      solucion: 'SELECT PEDIDO.NUMPED, CLIENTE.NOMCLI, VENDEDOR.APELLVEND, ARTICULO.DESCRIPCION, DETALLE_PED.CANTIDAD, (ARTICULO.PRECIO * DETALLE_PED.CANTIDAD) AS TOTAL FROM CLIENTE INNER JOIN PEDIDO ON CLIENTE.NUMCLI = PEDIDO.NUMCLI INNER JOIN VENDEDOR ON PEDIDO.CODVEND = VENDEDOR.CODVEND INNER JOIN DETALLE_PED ON PEDIDO.NUMPED = DETALLE_PED.NUMPED INNER JOIN ARTICULO ON DETALLE_PED.NUMART = ARTICULO.NUMART ORDER BY PEDIDO.NUMPED;',
+      variantes: ['SELECT PEDIDO.NUMPED, CLIENTE.NOMCLI, VENDEDOR.APELLVEND, ARTICULO.DESCRIPCION, DETALLE_PED.CANTIDAD, (DETALLE_PED.CANTIDAD * ARTICULO.PRECIO) AS TOTAL FROM CLIENTE INNER JOIN PEDIDO ON CLIENTE.NUMCLI = PEDIDO.NUMCLI INNER JOIN VENDEDOR ON PEDIDO.CODVEND = VENDEDOR.CODVEND INNER JOIN DETALLE_PED ON PEDIDO.NUMPED = DETALLE_PED.NUMPED INNER JOIN ARTICULO ON DETALLE_PED.NUMART = ARTICULO.NUMART ORDER BY PEDIDO.NUMPED;'],
+      resultado: {
+        columnas: ['NUMPED', 'NOMCLI', 'APELLVEND', 'DESCRIPCION', 'CANTIDAD', 'TOTAL'],
+        filas: [
+          [1001, 'Ana Torres', 'Pérez', 'Monitor 24"', 2, 300],
+          [1001, 'Ana Torres', 'Pérez', 'Teclado mecánico', 3, 135],
+          [1002, 'Bruno Díaz', 'López', 'Mouse inalámbrico', 5, 125],
+          [1002, 'Bruno Díaz', 'López', 'Antivirus', 2, 120],
+          [1003, 'Ana Torres', 'Ramírez', 'Office 365', 1, 120],
+          [1003, 'Ana Torres', 'Ramírez', 'Silla ergonómica', 2, 400],
+          [1004, 'Diego Ruiz', 'Pérez', 'Monitor 24"', 1, 150],
+          [1004, 'Diego Ruiz', 'Pérez', 'Mouse inalámbrico', 2, 50]
+        ]
+      },
+      explicacion: 'Cada JOIN acerca una tabla. La clave foránea de PEDIDO conecta cliente y vendedor; la de DETALLE_PED conecta pedido y artículo.'
+    },
+    {
+      id: 'sql-22',
+      modulo: '6',
+      titulo: 'Crear una vista de deudores',
+      tipo: 'accion',
+      conceptos: ['CREATE VIEW', 'columnas calculadas'],
+      enunciado: 'Creá una vista **CLIENTES_CON_DEUDA** que muestre `NUMCLI`, `NOMCLI` y el saldo total, solo de los clientes con saldo mayor a 0.',
+      pista: 'La forma es `CREATE VIEW nombre AS SELECT ... FROM ... WHERE ...`. La vista guarda la consulta, no los datos.',
+      solucion: 'CREATE VIEW CLIENTES_CON_DEUDA AS SELECT NUMCLI, NOMCLI, (SALD_0_30 + SALD_31_60 + SALD_61_90) AS SALDO_TOTAL FROM CLIENTE WHERE (SALD_0_30 + SALD_31_60 + SALD_61_90) > 0;',
+      requiere: ['create view clientes_con_deuda', 'as select', 'numcli', 'nomcli', 'sald_0_30', 'sald_31_60', 'sald_61_90', 'from cliente', 'where'],
+      resultado: { mensaje: 'Crea la vista CLIENTES_CON_DEUDA. No devuelve filas hasta que hagas SELECT sobre ella.' },
+      explicacion: 'Una vista es una consulta con nombre. Sirve para simplificar el acceso y ocultar la complejidad de las tablas.'
+    }
+  ];
+
+
+  /* ========================================================================
      5. Banco de ejemplo incluido
      ======================================================================== */
 
@@ -3629,6 +4239,16 @@ d) Trabajar en una sola rama para siempre
     preview: null,
     filtroRevision: 'todas',
     actividad: null,
+    sql: {
+      filtro: 'todos',
+      ejercicioId: null,
+      borrador: '',
+      resultado: null,
+      pista: false,
+      solucion: false,
+      intentos: 0,
+      progreso: Object.assign({}, safeGet(K.sqlProgreso, {}) || {})
+    },
     _ultimaPantalla: null,
     _ultimaPregunta: null,
     _foco: null,
@@ -3989,6 +4609,7 @@ d) Trabajar en una sola rama para siempre
       case 'preguntas': html = vistaPreguntas(); break;
       case 'carga': html = vistaCarga(); break;
       case 'actividades': html = vistaActividades(); break;
+      case 'sql': html = vistaBaseDatos(); break;
       case 'estudiar': html = vistaEstudiar(); break;
       case 'examen': html = vistaExamen(); break;
       case 'resultados': html = vistaResultados(); break;
@@ -4035,6 +4656,7 @@ d) Trabajar en una sola rama para siempre
       inicio: 'inicio',
       estudiar: 'estudiar',
       actividades: 'actividades',
+      sql: 'sql',
       historial: 'historial',
       bancos: 'bancos',
       preguntas: 'bancos',
@@ -4134,6 +4756,7 @@ d) Trabajar en una sola rama para siempre
             <button type="button" class="btn btn-primario" data-accion="ejemplo">Probar con el ejemplo</button>
             <button type="button" class="btn" data-nav="estudiar">Estudiar ahora</button>
             <button type="button" class="btn" data-nav="actividades">Actividades interactivas</button>
+            <button type="button" class="btn" data-nav="sql">Base de Datos</button>
           </div>
           <div class="hero-datos">
             <div class="hero-dato"><strong>${state.bancos.length}</strong><span>Bancos</span></div>
@@ -4152,6 +4775,16 @@ d) Trabajar en una sola rama para siempre
             ${htmlActividadMini('calidad', '✎', 'Completar calidad', 'Escribí a qué factor ISO 9126 corresponde cada definición o ejemplo.')}
             ${htmlActividadMini('relacionar', '⇄', 'Relacionar conceptos', 'Uní factores, fases y modelos con sus definiciones.')}
             ${htmlActividadMini('ordenar', '↕', 'Ordenar fases', 'Reconstruí el SDLC y las fases de requerimientos.')}
+          </div>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-sql-inicio">
+          <div class="seccion-cabecera">
+            <h2 class="seccion-titulo" id="titulo-sql-inicio">Base de Datos</h2>
+            <button type="button" class="btn btn-fantasma btn-chico" data-nav="sql">Abrir laboratorio</button>
+          </div>
+          <div class="sql-inicio">
+            ${htmlSqlMini()}
           </div>
         </section>
 
@@ -5113,6 +5746,502 @@ d) Trabajar en una sola rama para siempre
     state.actividad = null;
     state.pantalla = 'actividades';
     render({ focus: '#titulo-pantalla' });
+  }
+
+
+  /* ========================================================================
+     12d. Laboratorio SQL: vistas, corrección y progreso
+     ======================================================================== */
+
+  const SQL_RESERVADAS_ALIAS = new Set([
+    'where', 'inner', 'join', 'left', 'right', 'full', 'on', 'group', 'order',
+    'having', 'union', 'cross', 'outer', 'as', 'set', 'values', 'from'
+  ]);
+
+  function normalizarSql(texto) {
+    let sql = String(texto == null ? '' : texto);
+    sql = sql.replace(/--[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ');
+    sql = sql.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    sql = sql.replace(/^\s*use\s+ventas\s*;?/, ' ');
+    sql = sql.replace(/\bgo\b/g, ' ');
+    sql = sql.replace(/[\[\]`"]/g, ' ');
+    sql = sql.replace(/\b(dbo|ventas)\./g, ' ');
+    sql = sql.replace(/\binner\s+join\b/g, 'join');
+    sql = sql.replace(/\b(left|right|full)\s+outer\s+join\b/g, '$1 join');
+    sql = sql.replace(/<>/g, '!=');
+    sql = sql.replace(/\bcount\s*\(\s*1\s*\)/g, 'count(*)');
+    sql = sql.replace(/\b(\d+)\.0+\b/g, '$1');
+
+    /* Quita alias de columnas con AS, pero conserva CREATE VIEW ... AS SELECT. */
+    sql = sql.replace(/\bas\s+(?!select\b)[a-z_][a-z0-9_]*/g, ' ');
+    sql = sql.replace(/\bas\s+'[^']*'/g, ' ');
+
+    /* Convierte FROM CLIENTE c en FROM CLIENTE y luego quita los prefijos. */
+    const aliasTablas = {};
+    sql = sql.replace(/\b(from|join)\s+([a-z_][a-z0-9_]*)(?:\s+(?:as\s+)?([a-z_][a-z0-9_]*))?/g, (m, palabra, tabla, alias) => {
+      if (alias && !SQL_RESERVADAS_ALIAS.has(alias) && alias !== tabla) {
+        aliasTablas[alias] = tabla;
+        return `${palabra} ${tabla}`;
+      }
+      return m;
+    });
+    Object.entries(aliasTablas).forEach(([alias, tabla]) => {
+      sql = sql.replace(new RegExp(`\\b${alias}\\.`, 'g'), `${tabla}.`);
+    });
+    sql = sql.replace(/\b[a-z_][a-z0-9_]*\./g, '');
+    sql = sql.replace(/\bnot\s+([a-z_][a-z0-9_]*)\s*=\s*/g, '$1!= ');
+    sql = sql.replace(/\basc\b/g, ' ');
+
+    /* Normaliza espacios y signos, pero respeta los textos entre comillas simples. */
+    const partes = sql.split(/('(?:''|[^'])*')/g);
+    sql = partes.map((parte, i) => {
+      if (i % 2 === 1) return parte;
+      return parte
+        .replace(/\s*([(),;=<>+\-*\/])\s*/g, '$1')
+        .replace(/\s+/g, ' ');
+    }).join('');
+    return sql.replace(/;+$/g, '').trim();
+  }
+
+  function sqlEmpiezaBien(texto) {
+    const limpio = String(texto || '').replace(/--[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ').trim();
+    return /^(select|insert|update|delete|create|alter|drop|use)\b/i.test(limpio);
+  }
+
+  function sqlParentesisBalanceados(texto) {
+    let nivel = 0;
+    let enTexto = false;
+    const sql = String(texto || '')
+      .replace(/--[^\n]*/g, ' ')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ');
+    for (let i = 0; i < sql.length; i++) {
+      const c = sql[i];
+      if (c === "'") {
+        if (enTexto && sql[i + 1] === "'") { i++; continue; }
+        enTexto = !enTexto;
+        continue;
+      }
+      if (enTexto) continue;
+      if (c === '(') nivel++;
+      if (c === ')') {
+        nivel--;
+        if (nivel < 0) return false;
+      }
+    }
+    return nivel === 0 && !enTexto;
+  }
+
+  function sqlCoincide(texto, ejercicio) {
+    const normal = normalizarSql(texto);
+    if (!normal) return false;
+    if (Array.isArray(ejercicio.requiere) && ejercicio.requiere.length) {
+      return ejercicio.requiere.every((req) => normal.includes(normalizarSql(req)));
+    }
+    const candidatos = [ejercicio.solucion, ...(ejercicio.variantes || [])].map(normalizarSql);
+    return candidatos.includes(normal);
+  }
+
+  function sqlEjercicioPorId(id) {
+    return SQL_EJERCICIOS.find((e) => e.id === id) || null;
+  }
+
+  function sqlModuloPorId(id) {
+    return SQL_MODULOS.find((m) => m.id === id) || null;
+  }
+
+  function sqlEjerciciosFiltrados() {
+    return state.sql.filtro === 'todos'
+      ? SQL_EJERCICIOS
+      : SQL_EJERCICIOS.filter((e) => e.modulo === state.sql.filtro);
+  }
+
+  function sqlResueltos() {
+    return SQL_EJERCICIOS.filter((e) => state.sql.progreso[e.id]).length;
+  }
+
+  function resetearSqlEjercicio() {
+    state.sql.ejercicioId = null;
+    state.sql.borrador = '';
+    state.sql.resultado = null;
+    state.sql.pista = false;
+    state.sql.solucion = false;
+    state.sql.intentos = 0;
+  }
+
+  function abrirSqlEjercicio(id) {
+    const ejercicio = sqlEjercicioPorId(id);
+    if (!ejercicio) return;
+    resetearSqlEjercicio();
+    state.sql.ejercicioId = ejercicio.id;
+    state.pantalla = 'sql';
+    render({ focus: '#sql-respuesta' });
+  }
+
+  function volverListaSql() {
+    resetearSqlEjercicio();
+    state.pantalla = 'sql';
+    render({ focus: '#titulo-pantalla' });
+  }
+
+  function filtrarSql(modulo) {
+    state.sql.filtro = modulo || 'todos';
+    resetearSqlEjercicio();
+    state.pantalla = 'sql';
+    render({ focus: '#titulo-pantalla' });
+  }
+
+  function comprobarSql() {
+    const ejercicio = sqlEjercicioPorId(state.sql.ejercicioId);
+    if (!ejercicio) return;
+    const input = document.getElementById('sql-respuesta');
+    const texto = String(input?.value || '').trim();
+    if (!texto) {
+      toast('Escribí una sentencia antes de comprobar.', 'error');
+      input?.focus();
+      return;
+    }
+    state.sql.borrador = texto;
+    state.sql.intentos += 1;
+
+    if (!sqlEmpiezaBien(texto)) {
+      state.sql.resultado = {
+        acierto: false,
+        mensaje: 'Empezá con SELECT, INSERT, UPDATE, DELETE o CREATE. Una sola sentencia por ejercicio.'
+      };
+      state.sql.pista = true;
+      render({ focus: '#feedback-sql' });
+      anunciar('La sentencia no empieza con una instrucción SQL reconocida.');
+      return;
+    }
+
+    if (!sqlParentesisBalanceados(texto)) {
+      state.sql.resultado = {
+        acierto: false,
+        mensaje: 'Revisá los paréntesis y las comillas: hay algo que abre y no cierra.'
+      };
+      state.sql.pista = true;
+      render({ focus: '#feedback-sql' });
+      anunciar('Hay paréntesis o comillas sin cerrar.');
+      return;
+    }
+
+    const acierto = sqlCoincide(texto, ejercicio);
+    state.sql.resultado = { acierto, mensaje: '' };
+    if (acierto) {
+      state.sql.progreso[ejercicio.id] = true;
+      safeSet(K.sqlProgreso, state.sql.progreso);
+      anunciar('Respuesta correcta. Ejercicio resuelto.');
+    } else {
+      state.sql.pista = true;
+      anunciar('Todavía no. Revisá la pista y volvé a intentarlo.');
+    }
+    render({ focus: '#feedback-sql' });
+  }
+
+  function siguienteSql() {
+    const lista = sqlEjerciciosFiltrados();
+    const actual = lista.findIndex((e) => e.id === state.sql.ejercicioId);
+    const siguiente = actual >= 0 ? lista[actual + 1] : lista[0];
+    if (siguiente) {
+      abrirSqlEjercicio(siguiente.id);
+    } else {
+      volverListaSql();
+      toast('Terminaste los ejercicios de este filtro.', 'ok');
+    }
+  }
+
+  function alternarPistaSql() {
+    state.sql.pista = !state.sql.pista;
+    render();
+  }
+
+  function alternarSolucionSql() {
+    state.sql.solucion = !state.sql.solucion;
+    render();
+  }
+
+  async function copiarTexto(texto, mensajeOk) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast(mensajeOk || 'Copiado.', 'ok');
+    } catch {
+      toast('No se pudo copiar. Seleccioná el texto y copialo a mano.', 'error');
+    }
+  }
+
+  function copiarScriptSql() {
+    copiarTexto(SQL_SCRIPT, 'Script de VENTAS copiado.');
+  }
+
+  function copiarSolucionSql() {
+    const ejercicio = sqlEjercicioPorId(state.sql.ejercicioId);
+    if (ejercicio) copiarTexto(ejercicio.solucion, 'Solución copiada.');
+  }
+
+  function descargarScriptSql() {
+    descargar('ventas.sql', SQL_SCRIPT, 'text/plain');
+    toast('Script ventas.sql descargado.', 'ok');
+  }
+
+  async function reiniciarProgresoSql() {
+    const ok = await confirmar({
+      titulo: 'Reiniciar progreso SQL',
+      mensaje: 'Se van a borrar las marcas de ejercicios resueltos. Los ejercicios y tus bancos no se tocan.',
+      textoOk: 'Reiniciar',
+      peligro: true
+    });
+    if (!ok) return;
+    state.sql.progreso = {};
+    safeSet(K.sqlProgreso, state.sql.progreso);
+    resetearSqlEjercicio();
+    render({ focus: '#titulo-pantalla' });
+    toast('Progreso SQL reiniciado.', 'ok');
+  }
+
+  function htmlSqlCelda(valor) {
+    if (valor === null || valor === undefined) return '<span class="sql-null">NULL</span>';
+    return escapeHtml(String(valor));
+  }
+
+  function htmlSqlTabla(columnas, filas, etiqueta) {
+    const cabecera = columnas.map((c) => `<th scope="col">${escapeHtml(c)}</th>`).join('');
+    const cuerpo = filas.map((fila) => `
+      <tr>${fila.map((valor) => `<td>${htmlSqlCelda(valor)}</td>`).join('')}</tr>`).join('');
+    return `
+      <div class="sql-tabla-wrap" tabindex="0" role="region" aria-label="${escapeHtml(etiqueta || 'Tabla de resultados')}">
+        <table class="sql-tabla">
+          <thead><tr>${cabecera}</tr></thead>
+          <tbody>${cuerpo}</tbody>
+        </table>
+      </div>`;
+  }
+
+  function htmlSqlDatos() {
+    return Object.entries(SQL_VENTAS).map(([nombre, tabla]) => `
+      <div class="sql-datos-tabla">
+        <h3 class="seccion-subtitulo">${escapeHtml(nombre)}</h3>
+        ${htmlSqlTabla(tabla.columnas, tabla.filas, `Tabla ${nombre}`)}
+      </div>`).join('');
+  }
+
+  function htmlSqlMini() {
+    const total = SQL_EJERCICIOS.length;
+    const resueltos = sqlResueltos();
+    return `
+      <article class="tarjeta tarjeta-destacada actividad-card">
+        <div class="tarjeta-cabecera">
+          <h3 class="tarjeta-titulo">SQL desde cero</h3>
+          <span class="tarjeta-icono" aria-hidden="true">▤</span>
+        </div>
+        <p class="tarjeta-texto">Practicá con la base VENTAS: SELECT, WHERE, JOIN y resúmenes. Escribí tu sentencia y comprobá el resultado.</p>
+        <p class="texto-xs">${resueltos} de ${total} ejercicios resueltos</p>
+        <button type="button" class="btn btn-bloque mt-4" data-nav="sql">Abrir laboratorio SQL</button>
+      </article>`;
+  }
+
+  function htmlSqlProgreso() {
+    const total = SQL_EJERCICIOS.length;
+    const resueltos = sqlResueltos();
+    const pct = total ? Math.round((resueltos / total) * 100) : 0;
+    return `
+      <div class="progreso">
+        <div class="progreso-texto">
+          <span>Ejercicios resueltos</span>
+          <span>${resueltos} de ${total}</span>
+        </div>
+        <div class="progreso-barra" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${resueltos}" aria-label="Ejercicios SQL resueltos">
+          <div style="width: ${pct}%"></div>
+        </div>
+      </div>`;
+  }
+
+  function htmlSqlChips() {
+    const botones = [{ id: 'todos', titulo: 'Todos' }, ...SQL_MODULOS].map((modulo) => {
+      const activo = state.sql.filtro === modulo.id;
+      const total = modulo.id === 'todos'
+        ? SQL_EJERCICIOS.length
+        : SQL_EJERCICIOS.filter((e) => e.modulo === modulo.id).length;
+      return `
+        <button type="button" class="chip chip-boton" data-accion="sql-filtro" data-modulo="${escapeHtml(modulo.id)}" aria-pressed="${activo}">
+          ${escapeHtml(modulo.titulo)} · ${total}
+        </button>`;
+    }).join('');
+    return `<div class="chips sql-chips">${botones}</div>`;
+  }
+
+  function htmlSqlEjercicioCard(ejercicio) {
+    const modulo = sqlModuloPorId(ejercicio.modulo);
+    const resuelto = !!state.sql.progreso[ejercicio.id];
+    return `
+      <article class="tarjeta sql-ejercicio ${resuelto ? 'es-resuelto' : ''}">
+        <div class="sql-ejercicio-cabecera">
+          <span class="badge">Módulo ${escapeHtml(ejercicio.modulo)}</span>
+          <span class="badge badge-info">${escapeHtml(modulo?.titulo || 'SQL')}</span>
+          ${resuelto ? '<span class="badge badge-ok">Resuelto</span>' : ''}
+        </div>
+        <h3 class="sql-ejercicio-titulo">${escapeHtml(ejercicio.titulo)}</h3>
+        <p class="sql-ejercicio-texto">${renderMarkdown(ejercicio.enunciado)}</p>
+        <div class="fila-entre mt-3">
+          <div class="chips">
+            ${ejercicio.conceptos.map((c) => `<span class="chip">${escapeHtml(c)}</span>`).join('')}
+          </div>
+          <button type="button" class="btn btn-primario btn-chico" data-accion="sql-abrir" data-id="${escapeHtml(ejercicio.id)}">
+            ${resuelto ? 'Repasar' : 'Resolver'} →
+          </button>
+        </div>
+      </article>`;
+  }
+
+  function vistaBaseDatos() {
+    if (state.sql.ejercicioId) return vistaSqlEjercicio();
+    const lista = sqlEjerciciosFiltrados();
+    const total = SQL_EJERCICIOS.length;
+    const resueltos = sqlResueltos();
+    const primero = SQL_EJERCICIOS.find((e) => !state.sql.progreso[e.id]) || SQL_EJERCICIOS[0];
+
+    return `
+      <section class="pantalla" aria-labelledby="titulo-pantalla">
+        <div class="pantalla-cabecera">
+          <p class="eyebrow">SQL Server · base VENTAS</p>
+          <h1 class="titulo-pagina" id="titulo-pantalla" tabindex="-1">Base de Datos</h1>
+          <p class="subtitulo">Aprendé SQL resolviendo problemas. Escribí una sentencia, comprobala y mirá el resultado esperado.</p>
+        </div>
+
+        <div class="sql-hero">
+          <div class="sql-hero-texto">
+            <h2 class="seccion-titulo">Laboratorio SQL</h2>
+            <p class="texto-chico">La misma base VENTAS en todos los ejercicios: 5 clientes, 3 vendedores, 6 artículos y 4 pedidos. La corrección ignora mayúsculas, espacios, punto y coma y alias con AS.</p>
+            <div class="fila mt-3">
+              <button type="button" class="btn btn-primario" data-accion="sql-abrir" data-id="${escapeHtml(primero?.id || 'sql-01')}">
+                ${resueltos ? 'Seguir practicando' : 'Empezar por el primero'} →
+              </button>
+              ${resueltos ? '<button type="button" class="btn btn-fantasma btn-chico" data-accion="sql-reiniciar">Reiniciar progreso</button>' : ''}
+            </div>
+          </div>
+          <div class="sql-hero-datos">
+            <div class="hero-dato"><strong>${resueltos}/${total}</strong><span>Resueltos</span></div>
+            <div class="hero-dato"><strong>${SQL_MODULOS.length}</strong><span>Módulos</span></div>
+            <div class="hero-dato"><strong>5</strong><span>Tablas</span></div>
+          </div>
+        </div>
+
+        ${htmlSqlProgreso()}
+
+        <details class="sql-datos">
+          <summary>Ver los datos de VENTAS y el script para SQL Server</summary>
+          <p class="texto-chico">Estos son los datos que usa la app. Si querés practicar en SSMS, descargá el script y ejecutalo en una base vacía.</p>
+          <div class="grid grid-2 mt-3">${htmlSqlDatos()}</div>
+          <div class="fila mt-3">
+            <button type="button" class="btn btn-chico" data-accion="sql-copiar">Copiar script</button>
+            <button type="button" class="btn btn-chico" data-accion="sql-descargar">Descargar ventas.sql</button>
+          </div>
+          <details class="sql-script-detalle">
+            <summary>Ver script CREATE TABLE e INSERT</summary>
+            <pre class="sql-codigo sql-script">${escapeHtml(SQL_SCRIPT)}</pre>
+          </details>
+        </details>
+
+        <div class="seccion-cabecera mt-5">
+          <h2 class="seccion-titulo">Problemas</h2>
+          <p class="seccion-sub">${lista.length} ${lista.length === 1 ? 'ejercicio' : 'ejercicios'} en este filtro</p>
+        </div>
+        ${htmlSqlChips()}
+
+        <div class="sql-lista mt-4">
+          ${lista.length
+            ? lista.map(htmlSqlEjercicioCard).join('')
+            : '<div class="vacio"><h3>No hay ejercicios en este módulo.</h3><p>Probá con otro filtro.</p></div>'}
+        </div>
+      </section>`;
+  }
+
+  function vistaSqlEjercicio() {
+    const ejercicio = sqlEjercicioPorId(state.sql.ejercicioId);
+    if (!ejercicio) return vistaBaseDatos();
+    const modulo = sqlModuloPorId(ejercicio.modulo);
+    const resultado = state.sql.resultado;
+    const resuelto = !!state.sql.progreso[ejercicio.id];
+    const mostrarResultado = !!(resultado?.acierto || state.sql.solucion);
+    const lista = sqlEjerciciosFiltrados();
+    const indice = lista.findIndex((e) => e.id === ejercicio.id);
+    const haySiguiente = indice >= 0 && indice < lista.length - 1;
+
+    return `
+      <section class="pantalla" aria-labelledby="titulo-pantalla">
+        <div class="pantalla-cabecera">
+          <button type="button" class="btn btn-fantasma btn-chico" data-accion="sql-lista">← Base de Datos</button>
+          <p class="eyebrow">Módulo ${escapeHtml(ejercicio.modulo)} · ${escapeHtml(modulo?.titulo || 'SQL')}</p>
+          <h1 class="titulo-pagina" id="titulo-pantalla" tabindex="-1">${escapeHtml(ejercicio.titulo)}</h1>
+          <p class="subtitulo">${renderMarkdown(ejercicio.enunciado)}</p>
+        </div>
+
+        <div class="actividad-barra">
+          ${ejercicio.conceptos.map((c) => `<span class="badge badge-info">${escapeHtml(c)}</span>`).join('')}
+          ${resuelto ? '<span class="badge badge-ok">Resuelto</span>' : '<span class="badge">Pendiente</span>'}
+        </div>
+
+        <div class="tarjeta actividad-panel sql-panel">
+          <form id="form-sql" class="actividad-form sql-form" novalidate>
+            <div class="campo">
+              <label for="sql-respuesta">Tu sentencia SQL</label>
+              <textarea id="sql-respuesta" name="sql" rows="6" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="SELECT ...">${escapeHtml(state.sql.borrador)}</textarea>
+              <p class="ayuda">Una sola sentencia. Podés usar mayúsculas o minúsculas; la corrección ignora espacios, punto y coma y alias con AS.</p>
+            </div>
+            <div class="fila">
+              <button type="submit" class="btn btn-primario">Comprobar</button>
+              <button type="button" class="btn" data-accion="sql-pista" aria-expanded="${state.sql.pista}">
+                ${state.sql.pista ? 'Ocultar pista' : 'Pista'}
+              </button>
+              <button type="button" class="btn btn-fantasma" data-accion="sql-solucion" aria-expanded="${state.sql.solucion}">
+                ${state.sql.solucion ? 'Ocultar solución' : 'Ver una solución'}
+              </button>
+            </div>
+          </form>
+
+          ${state.sql.pista ? `
+            <div class="alerta alerta-info actividad-feedback" id="sql-pista" role="note">
+              <span class="alerta-icono" aria-hidden="true">?</span>
+              <div><strong>Pista.</strong> ${escapeHtml(ejercicio.pista)}</div>
+            </div>` : ''}
+
+          ${state.sql.solucion ? `
+            <div class="sql-solucion">
+              <div class="fila-entre">
+                <h2 class="seccion-subtitulo">Una solución posible</h2>
+                <button type="button" class="btn btn-chico" data-accion="sql-copiar-solucion">Copiar</button>
+              </div>
+              <pre class="sql-codigo">${escapeHtml(ejercicio.solucion)}</pre>
+            </div>` : ''}
+
+          ${resultado ? `
+            <div class="alerta ${resultado.acierto ? 'alerta-ok' : 'alerta-error'} actividad-feedback" id="feedback-sql" tabindex="-1" role="status">
+              <span class="alerta-icono" aria-hidden="true">${resultado.acierto ? '✓' : '✕'}</span>
+              <div>
+                <strong>${resultado.acierto ? '¡Correcto!' : 'Todavía no.'}</strong>
+                ${resultado.acierto
+                  ? ' La sentencia resuelve el problema.'
+                  : ' Revisá la pista y probá de nuevo. ¿Qué creés que devolvió tu consulta?'}
+                ${resultado.mensaje ? `<p>${escapeHtml(resultado.mensaje)}</p>` : ''}
+              </div>
+            </div>` : '<div id="feedback-sql" tabindex="-1"></div>'}
+
+          ${mostrarResultado ? `
+            <div class="sql-resultado">
+              <h2 class="seccion-subtitulo">Resultado esperado</h2>
+              ${ejercicio.tipo === 'select'
+                ? htmlSqlTabla(ejercicio.resultado.columnas, ejercicio.resultado.filas, 'Resultado esperado del ejercicio')
+                : `<div class="alerta alerta-info"><span class="alerta-icono" aria-hidden="true">i</span><div>${escapeHtml(ejercicio.resultado.mensaje)}</div></div>`}
+              <p class="revision-explicacion">${renderMarkdown(ejercicio.explicacion)}</p>
+            </div>` : ''}
+
+          <div class="fila mt-4">
+            <button type="button" class="btn btn-primario" data-accion="sql-siguiente">
+              ${haySiguiente ? 'Siguiente problema →' : 'Volver a la lista'}
+            </button>
+            <button type="button" class="btn" data-accion="sql-lista">Elegir otro problema</button>
+          </div>
+        </div>
+      </section>`;
   }
 
 
@@ -6686,12 +7815,15 @@ d) Trabajar en una sola rama para siempre
     if (destinoFinal === 'actividades' && state.pantalla !== 'actividades') {
       state.actividad = null;
     }
+    if (destinoFinal === 'sql' && state.pantalla !== 'sql') {
+      resetearSqlEjercicio();
+    }
     state.pantalla = destinoFinal === 'examen' && !state.sesion ? 'inicio' : destinoFinal;
     render();
   }
 
   function ir(destino) {
-    const validas = ['inicio', 'bancos', 'preguntas', 'carga', 'actividades', 'estudiar', 'examen', 'resultados', 'historial'];
+    const validas = ['inicio', 'bancos', 'preguntas', 'carga', 'actividades', 'sql', 'estudiar', 'examen', 'resultados', 'historial'];
     const destinoFinal = validas.includes(destino) ? destino : 'inicio';
 
     if (state.pantalla === 'examen' && state.sesion && destinoFinal !== 'examen') {
@@ -6757,6 +7889,36 @@ d) Trabajar en una sola rama para siempre
         break;
       case 'actividad-menu':
         volverActividades();
+        break;
+      case 'sql-abrir':
+        abrirSqlEjercicio(el.dataset.id);
+        break;
+      case 'sql-lista':
+        volverListaSql();
+        break;
+      case 'sql-pista':
+        alternarPistaSql();
+        break;
+      case 'sql-solucion':
+        alternarSolucionSql();
+        break;
+      case 'sql-siguiente':
+        siguienteSql();
+        break;
+      case 'sql-filtro':
+        filtrarSql(el.dataset.modulo || 'todos');
+        break;
+      case 'sql-copiar':
+        copiarScriptSql();
+        break;
+      case 'sql-copiar-solucion':
+        copiarSolucionSql();
+        break;
+      case 'sql-descargar':
+        descargarScriptSql();
+        break;
+      case 'sql-reiniciar':
+        reiniciarProgresoSql();
         break;
       case 'calidad-siguiente':
         siguienteCalidad();
@@ -6960,6 +8122,12 @@ d) Trabajar en una sola rama para siempre
       return;
     }
 
+    if (form.id === 'form-sql') {
+      evento.preventDefault();
+      comprobarSql();
+      return;
+    }
+
     if (form.id === 'form-renombrar') {
       evento.preventDefault();
       const fd = new FormData(form);
@@ -7005,6 +8173,10 @@ d) Trabajar en una sola rama para siempre
 
   document.addEventListener('input', (evento) => {
     const el = evento.target;
+    if (el && el.id === 'sql-respuesta' && state.pantalla === 'sql') {
+      state.sql.borrador = el.value;
+      return;
+    }
     if (!el || !el.name || !/^opcion[0-3]$/.test(el.name)) return;
     const form = el.form;
     if (!form || form.id !== 'form-pregunta') return;
@@ -7067,6 +8239,11 @@ d) Trabajar en una sola rama para siempre
     if (modal && modal.open) return;
 
     const objetivo = evento.target;
+    if (objetivo && objetivo.id === 'sql-respuesta' && (evento.ctrlKey || evento.metaKey) && evento.key === 'Enter') {
+      evento.preventDefault();
+      document.getElementById('form-sql')?.requestSubmit();
+      return;
+    }
     const esCampo = objetivo && (
       objetivo.tagName === 'TEXTAREA' ||
       objetivo.tagName === 'SELECT' ||
