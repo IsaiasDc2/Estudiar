@@ -2002,6 +2002,23 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
   margin-top: var(--space-4);
 }
 .tp7-guia .seccion-subtitulo { margin: 0; }
+.tp7-consigna {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--gold-line);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radio-sm);
+  background: var(--gold-soft);
+}
+.tp7-consigna-etiqueta {
+  color: var(--gold);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+.tp7-consigna p { margin: 0; color: var(--text); font-size: var(--text-small); }
 .tp7-guia-paso {
   display: grid;
   gap: 0.45rem;
@@ -2009,6 +2026,14 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
   border-top: 1px solid var(--border-soft);
 }
 .tp7-guia-paso:first-of-type { padding-top: 0; border-top: 0; }
+.tp7-guia-paso-cabecera { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.tp7-guia-etiqueta {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 .tp7-guia-paso h3 { margin: 0; font-size: var(--text-small); line-height: 1.4; }
 .tp7-guia-opcion { text-align: left; }
 .tp7-guia-opcion.chip-ok {
@@ -4614,6 +4639,205 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
     { senal: '“al menos dos días antes”', herramienta: 'DATEDIFF / ADDDATE', ejemplo: 'entregas anticipadas' }
   ];
 
+  /* ------------------------------------------------------------------------
+     Correctores estructurales del TP7
+     Trabajan sobre una versión que conserva alias de tabla y prefijos, porque
+     la normalización general los elimina y no permitiría saber a qué tabla
+     pertenece cada IS NULL o cada igualdad entre columnas.
+     ------------------------------------------------------------------------ */
+
+  const TP7_ALIAS_RESERVADAS = new Set([
+    'where', 'inner', 'join', 'left', 'right', 'full', 'on', 'group', 'order',
+    'having', 'union', 'cross', 'outer', 'as', 'set', 'values', 'from', 'and',
+    'or', 'not', 'limit', 'using', 'natural'
+  ]);
+
+  function tp7SqlCrudo(texto) {
+    let sql = String(texto == null ? '' : texto);
+    sql = sql.replace(/--[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ');
+    sql = sql.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    sql = sql.replace(/^\s*use\s+(ventas|jardineria)\s*;?/, ' ');
+    sql = sql.replace(/\bgo\b/g, ' ');
+    sql = sql.replace(/[\[\]`"]/g, ' ');
+    sql = sql.replace(/\b(dbo|ventas|jardineria)\./g, ' ');
+    sql = sql.replace(/\binner\s+join\b/g, 'join');
+    sql = sql.replace(/\b(left|right|full)\s+outer\s+join\b/g, '$1 join');
+    sql = sql.replace(/<>/g, '!=');
+    const partes = sql.split(/('(?:''|[^'])*')/g);
+    sql = partes.map((parte, i) => {
+      if (i % 2 === 1) return parte;
+      return parte
+        .replace(/\s*([(),;=<>+\-*\/])\s*/g, '$1')
+        .replace(/\s+/g, ' ');
+    }).join('');
+    return sql.replace(/;+$/g, '').trim();
+  }
+
+  function tp7AliasTablas(crudo) {
+    const mapa = {};
+    const re = /\b(from|join)\s+([a-z_][a-z0-9_]*)(?:\s+(?:as\s+)?([a-z_][a-z0-9_]*))?/g;
+    let m;
+    while ((m = re.exec(crudo))) {
+      const tabla = m[2];
+      mapa[tabla] = tabla;
+      const alias = m[3];
+      if (alias && TP7_ALIAS_RESERVADAS.has(alias)) {
+        /* El alias opcional consumió una palabra clave (ON, WHERE, JOIN...).
+           Retrocedemos para que esa palabra se pueda analizar de nuevo. */
+        re.lastIndex = m.index + m[0].length - alias.length;
+      } else if (alias && alias !== tabla) {
+        mapa[alias] = tabla;
+      }
+    }
+    return mapa;
+  }
+
+  function tp7ColumnaUnicaEn(columna, tabla) {
+    const duenios = TP7_ESQUEMA.filter((t) => t.columnas.includes(columna)).map((t) => t.tabla);
+    return duenios.length === 1 && duenios[0] === tabla;
+  }
+
+  function tp7EsLeftJoin(crudo, tabla) {
+    return new RegExp(`\\bleft\\s+join\\s+${tabla}\\b`).test(crudo);
+  }
+
+  function tp7Nulls(crudo) {
+    const out = [];
+    const re = /\b(?:([a-z_][a-z0-9_]*)\.)?([a-z_][a-z0-9_]*)\s+is\s+(not\s+)?null\b/g;
+    let m;
+    while ((m = re.exec(crudo))) {
+      out.push({ prefijo: m[1] || null, columna: m[2], negado: Boolean(m[3]) });
+    }
+    return out;
+  }
+
+  function tp7TieneIsNullDe(crudo, tabla) {
+    const mapa = tp7AliasTablas(crudo);
+    return tp7Nulls(crudo).some((n) => {
+      if (n.negado) return false;
+      if (n.prefijo) return (mapa[n.prefijo] || n.prefijo) === tabla;
+      return tp7ColumnaUnicaEn(n.columna, tabla);
+    });
+  }
+
+  function tp7TieneIsNotNullDe(crudo, tabla) {
+    const mapa = tp7AliasTablas(crudo);
+    return tp7Nulls(crudo).some((n) => {
+      if (!n.negado) return false;
+      if (n.prefijo) return (mapa[n.prefijo] || n.prefijo) === tabla;
+      return tp7ColumnaUnicaEn(n.columna, tabla);
+    });
+  }
+
+  function tp7TablaDeExpresion(prefijo, columna, mapa) {
+    if (prefijo) return mapa[prefijo] || prefijo;
+    const tablas = Array.from(new Set(Object.values(mapa)))
+      .filter((tabla) => TP7_ESQUEMA.some((t) => t.tabla === tabla && t.columnas.includes(columna)));
+    return tablas.length === 1 ? tablas[0] : null;
+  }
+
+  function tp7Relaciona(crudo, tablaA, colA, tablaB, colB, mapaDado) {
+    const mapa = mapaDado || tp7AliasTablas(crudo);
+    const re = /\b(?:([a-z_][a-z0-9_]*)\.)?([a-z_][a-z0-9_]*)\s*=\s*(?:([a-z_][a-z0-9_]*)\.)?([a-z_][a-z0-9_]*)\b/g;
+    let m;
+    while ((m = re.exec(crudo))) {
+      const aTabla = tp7TablaDeExpresion(m[1], m[2], mapa);
+      const bTabla = tp7TablaDeExpresion(m[3], m[4], mapa);
+      if (aTabla === tablaA && m[2] === colA && bTabla === tablaB && m[4] === colB) return true;
+      if (aTabla === tablaB && m[2] === colB && bTabla === tablaA && m[4] === colA) return true;
+    }
+    return false;
+  }
+
+  function tp7ClausulaSelect(n) {
+    const m = n.match(/^select\b([^]*?)\bfrom\b/);
+    return m ? m[1] : '';
+  }
+
+  function tp7SeleccionaColumna(n, columna) {
+    return new RegExp(`\\b${columna}\\b`).test(tp7ClausulaSelect(n));
+  }
+
+  function tp7SeleccionaTodas(n, columnas) {
+    return columnas.every((c) => tp7SeleccionaColumna(n, c));
+  }
+
+  const TP7_RE_SUMA_FACTURADA = /sum\((?:precio_unidad\*cantidad|cantidad\*precio_unidad)\)/;
+
+  function tp7TieneBaseImponible(n) {
+    const base = /sum\((?:precio_unidad\*cantidad|cantidad\*precio_unidad)\)/g;
+    return (n.match(base) || []).length > 0 &&
+      /sum\((?:precio_unidad\*cantidad|cantidad\*precio_unidad)\)(?![*+\-/])/.test(n);
+  }
+
+  function tp7TieneIva21(n) {
+    const base = '(?:precio_unidad\\*cantidad|cantidad\\*precio_unidad)';
+    const sumaBase = `sum\\(${base}\\)`;
+    return new RegExp(`${sumaBase}\\*0?\\.21`).test(n) ||
+      new RegExp(`${sumaBase}\\*21\\/100`).test(n) ||
+      new RegExp(`sum\\(${base}\\*0?\\.21\\)`).test(n) ||
+      new RegExp(`sum\\(${base}\\*21\\/100\\)`).test(n);
+  }
+
+  function tp7TieneTotalConIva(n) {
+    const base = '(?:precio_unidad\\*cantidad|cantidad\\*precio_unidad)';
+    const sumaBase = `sum\\(${base}\\)`;
+    if (new RegExp(`${sumaBase}\\*1\\.21`).test(n) ||
+      new RegExp(`${sumaBase}\\*121\\/100`).test(n) ||
+      new RegExp(`sum\\(${base}\\*1\\.21\\)`).test(n)) return true;
+    return new RegExp(`${sumaBase}\\+${sumaBase}\\*0?\\.21`).test(n) ||
+      new RegExp(`${sumaBase}\\*0?\\.21\\+${sumaBase}`).test(n) ||
+      /sum\(\(*(?:precio_unidad\*cantidad|cantidad\*precio_unidad)\)?\*0?\.21\)*\+\(*(?:precio_unidad\*cantidad|cantidad\*precio_unidad)\)?\)/.test(n) ||
+      /sum\(\(*(?:precio_unidad\*cantidad|cantidad\*precio_unidad)\)?\+\(*(?:precio_unidad\*cantidad|cantidad\*precio_unidad)\)?\*0?\.21\)*\)/.test(n);
+  }
+
+  function tp7FiltraFacturacion(n, crudo) {
+    const base = '(?:sum\\(precio_unidad\\*cantidad\\)|sum\\(cantidad\\*precio_unidad\\))';
+    if (new RegExp(`having\\s+${base}\\s*>\\s*3000`).test(n)) return true;
+    const alias = [];
+    const re = /sum\(\s*(?:(?:[a-z_][a-z0-9_]*)\.)?(?:precio_unidad\s*\*\s*(?:[a-z_][a-z0-9_]*\.)?cantidad|cantidad\s*\*\s*(?:[a-z_][a-z0-9_]*\.)?precio_unidad)\s*\)\s*(?:as\s+)?([a-z_][a-z0-9_]*)/g;
+    let m;
+    while ((m = re.exec(crudo))) {
+      if (!TP7_ALIAS_RESERVADAS.has(m[1])) alias.push(m[1]);
+    }
+    return alias.some((a) => new RegExp(`having\\s+${a}\\s*>\\s*3000`).test(crudo));
+  }
+
+  function tp7SubconsultasExists(crudo, negada) {
+    const out = [];
+    const re = /(not\s+)?exists\s*\(([^]*?)\)/g;
+    let m;
+    while ((m = re.exec(crudo))) {
+      if (Boolean(m[1]) === negada) out.push(m[2]);
+    }
+    return out;
+  }
+
+  function tp7TieneSubconsultaExists(crudo, negada, tabla) {
+    return tp7SubconsultasExists(crudo, negada)
+      .some((sub) => new RegExp(`\\bfrom\\s+${tabla}\\b`).test(sub));
+  }
+
+  function tp7CorrelacionaExists(crudo, negada, tablaExterna, colExterna, tablaInterna, colInterna) {
+    const mapa = tp7AliasTablas(crudo);
+    return tp7SubconsultasExists(crudo, negada).some((sub) =>
+      tp7Relaciona(sub, tablaExterna, colExterna, tablaInterna, colInterna, mapa)
+    );
+  }
+
+  function tp7ExistePositivo(n) {
+    return /exists\s*\(/.test(n.replace(/not\s+exists\s*\(/g, ' '));
+  }
+
+  function tp7DosDiasAntes(n) {
+    return /datediff\(fecha_entrega,fecha_esperada\)(?:<=-2|<-1)/.test(n) ||
+      /datediff\(fecha_esperada,fecha_entrega\)(?:>=2|>1)/.test(n) ||
+      /fecha_entrega<=adddate\(fecha_esperada,(?:interval)?-2/.test(n) ||
+      /fecha_esperada>=adddate\(fecha_entrega,(?:interval)?2/.test(n) ||
+      /fecha_entrega<adddate\(fecha_esperada,(?:interval)?-1/.test(n) ||
+      /fecha_esperada>adddate\(fecha_entrega,(?:interval)?1/.test(n);
+  }
+
   const TP7_EJERCICIOS = [
     {
       id: 'tp7-01',
@@ -4647,7 +4871,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: "SELECT ciudad, telefono FROM oficina WHERE pais = 'España';",
       criterios: [
         { etiqueta: 'Usa la tabla oficina', test: /from\s+oficina\b/ },
-        { etiqueta: 'Muestra ciudad y teléfono', test: /select[^]*ciudad[^]*telefono|select[^]*telefono[^]*ciudad/ },
+        { etiqueta: 'Muestra ciudad y teléfono', test: (n) => tp7SeleccionaTodas(n, ['ciudad', 'telefono']) },
         { etiqueta: "Filtra país = 'España'", test: /where\s+pais\s*=\s*'espana'/ }
       ],
       resultado: {
@@ -4689,7 +4913,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       criterios: [
         { etiqueta: 'Usa la tabla empleado', test: /from\s+empleado\b/ },
         { etiqueta: 'Filtra codigo_jefe = 7', test: /where\s+codigo_jefe\s*=\s*7/ },
-        { etiqueta: 'Muestra nombre, apellidos y email', test: /select[^]*nombre[^]*apellido1[^]*email|select[^]*email[^]*nombre/ }
+        { etiqueta: 'Muestra nombre, apellidos y email', test: (n) => tp7SeleccionaTodas(n, ['nombre', 'apellido1', 'apellido2', 'email']) }
       ],
       resultado: {
         columnas: ['nombre', 'apellido1', 'apellido2', 'email'],
@@ -4730,7 +4954,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       criterios: [
         { etiqueta: 'Usa la tabla pedido', test: /from\s+pedido\b/ },
         { etiqueta: 'Compara entrega > esperada', test: /fecha_entrega\s*>\s*fecha_esperada/ },
-        { etiqueta: 'Muestra las cuatro columnas pedidas', test: /select[^]*codigo_pedido[^]*codigo_cliente[^]*fecha_esperada[^]*fecha_entrega/ }
+        { etiqueta: 'Muestra las cuatro columnas pedidas', test: (n) => tp7SeleccionaTodas(n, ['codigo_pedido', 'codigo_cliente', 'fecha_esperada', 'fecha_entrega']) }
       ],
       resultado: {
         columnas: ['codigo_pedido', 'codigo_cliente', 'fecha_esperada', 'fecha_entrega'],
@@ -4771,8 +4995,8 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       criterios: [
         { etiqueta: 'Usa la tabla pedido', test: /from\s+pedido\b/ },
         { etiqueta: 'Usa DATEDIFF o ADDDATE', test: /datediff\s*\(|adddate\s*\(/ },
-        { etiqueta: 'Exige dos días o más de anticipación', test: (n) => /datediff\s*\(\s*fecha_entrega\s*,\s*fecha_esperada\s*\)\s*(<=|=)\s*-2/.test(n) || /datediff\s*\(\s*fecha_esperada\s*,\s*fecha_entrega\s*\)\s*>=\s*2/.test(n) || /fecha_entrega\s*(<=|=)\s*adddate\s*\(\s*fecha_esperada\s*,\s*(interval\s+)?-2(\s+day)?\s*\)/.test(n) },
-        { etiqueta: 'Muestra las cuatro columnas pedidas', test: /select[^]*codigo_pedido[^]*codigo_cliente[^]*fecha_esperada[^]*fecha_entrega/ }
+        { etiqueta: 'Exige dos días o más de anticipación', test: (n) => tp7DosDiasAntes(n) },
+        { etiqueta: 'Muestra las cuatro columnas pedidas', test: (n) => tp7SeleccionaTodas(n, ['codigo_pedido', 'codigo_cliente', 'fecha_esperada', 'fecha_entrega']) }
       ],
       resultado: {
         columnas: ['codigo_pedido', 'codigo_cliente', 'fecha_esperada', 'fecha_entrega'],
@@ -4831,7 +5055,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       enunciado: 'Obtén un listado con el **nombre de cada cliente** y el **nombre y apellido** de su representante de ventas.',
       guia: {
         base: {
-          pregunta: '¿Qué tabla va primero?',
+          pregunta: '¿Qué tabla conviene como base para listar clientes?',
           opciones: ['`cliente`', '`empleado`', '`pago`'],
           correctas: [0],
           explicacion: 'El sujeto de la frase es el cliente; desde ahí seguís la clave foránea hacia el empleado.'
@@ -4855,8 +5079,8 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       criterios: [
         { etiqueta: 'Usa cliente como tabla base', test: /from\s+cliente\b/ },
         { etiqueta: 'Une con empleado', test: /join\s+empleado\b/ },
-        { etiqueta: 'Usa la clave del representante', test: /codigo_empleado_rep_ventas\s*=\s*codigo_empleado|codigo_empleado\s*=\s*codigo_empleado_rep_ventas/ },
-        { etiqueta: 'Muestra cliente y apellido del representante', test: /nombre_cliente[^]*apellido1|apellido1[^]*nombre_cliente/ }
+        { etiqueta: 'Usa la clave del representante', test: (_n, crudo) => tp7Relaciona(crudo, 'cliente', 'codigo_empleado_rep_ventas', 'empleado', 'codigo_empleado') },
+        { etiqueta: 'Muestra cliente y nombre del representante', test: (n) => tp7SeleccionaTodas(n, ['nombre_cliente', 'nombre', 'apellido1']) }
       ],
       resultado: {
         columnas: ['nombre_cliente', 'nombre', 'apellido1'],
@@ -4898,8 +5122,10 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
         { etiqueta: 'Usa cliente como tabla base', test: /from\s+cliente\b/ },
         { etiqueta: 'Une con empleado', test: /join\s+empleado\b/ },
         { etiqueta: 'Une con pago', test: /join\s+pago\b/ },
-        { etiqueta: 'Usa la clave del representante', test: /codigo_empleado_rep_ventas\s*=\s*codigo_empleado|codigo_empleado\s*=\s*codigo_empleado_rep_ventas/ },
-        { etiqueta: 'Relaciona pago con cliente', test: /pago\s*\.\s*codigo_cliente\s*=\s*cliente\s*\.\s*codigo_cliente|codigo_cliente\s*=\s*codigo_cliente/ }
+        { etiqueta: 'Usa la clave del representante', test: (_n, crudo) => tp7Relaciona(crudo, 'cliente', 'codigo_empleado_rep_ventas', 'empleado', 'codigo_empleado') },
+        { etiqueta: 'Relaciona pago con cliente', test: (_n, crudo) => tp7Relaciona(crudo, 'pago', 'codigo_cliente', 'cliente', 'codigo_cliente') },
+        { etiqueta: 'No excluye a los clientes que sí pagaron', test: (_n, crudo) => !tp7EsLeftJoin(crudo, 'pago') || tp7TieneIsNotNullDe(crudo, 'pago') },
+        { etiqueta: 'Muestra cliente y nombre del representante', test: (n) => tp7SeleccionaTodas(n, ['nombre_cliente', 'nombre']) }
       ],
       resultado: {
         columnas: ['nombre_cliente', 'nombre', 'apellido1'],
@@ -4941,8 +5167,10 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
         { etiqueta: 'Usa cliente como tabla base', test: /from\s+cliente\b/ },
         { etiqueta: 'Hace LEFT JOIN con pago', test: /left\s+join\s+pago\b/ },
         { etiqueta: 'Une con empleado', test: /join\s+empleado\b/ },
-        { etiqueta: 'Filtra pago.codigo_cliente IS NULL', test: /is\s+null/ },
-        { etiqueta: 'Usa la clave del representante', test: /codigo_empleado_rep_ventas\s*=\s*codigo_empleado|codigo_empleado\s*=\s*codigo_empleado_rep_ventas/ }
+        { etiqueta: 'Filtra una columna de pago IS NULL', test: (_n, crudo) => tp7TieneIsNullDe(crudo, 'pago') },
+        { etiqueta: 'Usa la clave del representante', test: (_n, crudo) => tp7Relaciona(crudo, 'cliente', 'codigo_empleado_rep_ventas', 'empleado', 'codigo_empleado') },
+        { etiqueta: 'Relaciona pago con cliente', test: (_n, crudo) => tp7Relaciona(crudo, 'pago', 'codigo_cliente', 'cliente', 'codigo_cliente') },
+        { etiqueta: 'Muestra cliente y nombre del representante', test: (n) => tp7SeleccionaTodas(n, ['nombre_cliente', 'nombre']) }
       ],
       resultado: {
         columnas: ['nombre_cliente', 'nombre', 'apellido1'],
@@ -4959,7 +5187,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       enunciado: 'Devuelve el nombre de los clientes que han hecho pagos, el nombre de sus representantes y la **ciudad de la oficina** del representante.',
       guia: {
         base: {
-          pregunta: '¿Qué tabla va primero?',
+          pregunta: '¿Qué tabla conviene como base para listar clientes?',
           opciones: ['`cliente`', '`oficina`', '`pago`'],
           correctas: [0],
           explicacion: 'El cliente es el sujeto; desde ahí llegás al representante, al pago y a la oficina.'
@@ -4985,8 +5213,10 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
         { etiqueta: 'Une con empleado', test: /join\s+empleado\b/ },
         { etiqueta: 'Une con pago', test: /join\s+pago\b/ },
         { etiqueta: 'Une con oficina', test: /join\s+oficina\b/ },
-        { etiqueta: 'Relaciona oficina con empleado', test: /oficina\s*\.\s*codigo_oficina\s*=\s*empleado\s*\.\s*codigo_oficina|codigo_oficina\s*=\s*codigo_oficina/ },
-        { etiqueta: 'Muestra la ciudad', test: /ciudad/ }
+        { etiqueta: 'Relaciona cliente con empleado', test: (_n, crudo) => tp7Relaciona(crudo, 'cliente', 'codigo_empleado_rep_ventas', 'empleado', 'codigo_empleado') },
+        { etiqueta: 'Relaciona oficina con empleado', test: (_n, crudo) => tp7Relaciona(crudo, 'oficina', 'codigo_oficina', 'empleado', 'codigo_oficina') },
+        { etiqueta: 'Relaciona pago con cliente', test: (_n, crudo) => tp7Relaciona(crudo, 'pago', 'codigo_cliente', 'cliente', 'codigo_cliente') },
+        { etiqueta: 'Muestra cliente, representante y ciudad', test: (n) => tp7SeleccionaTodas(n, ['nombre_cliente', 'nombre', 'ciudad']) }
       ],
       resultado: {
         columnas: ['nombre_cliente', 'nombre', 'apellido1', 'ciudad'],
@@ -5027,7 +5257,8 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       criterios: [
         { etiqueta: 'Usa cliente como tabla base', test: /from\s+cliente\b/ },
         { etiqueta: 'Hace LEFT JOIN con pedido', test: /left\s+join\s+pedido\b/ },
-        { etiqueta: 'Filtra pedido.codigo_cliente IS NULL', test: /is\s+null/ }
+        { etiqueta: 'Filtra una columna de pedido IS NULL', test: (_n, crudo) => tp7TieneIsNullDe(crudo, 'pedido') },
+        { etiqueta: 'Muestra el nombre del cliente', test: (n) => tp7SeleccionaColumna(n, 'nombre_cliente') }
       ],
       resultado: {
         columnas: ['nombre_cliente'],
@@ -5057,7 +5288,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
         },
         filtro: {
           pregunta: '¿Qué condición usás?',
-          opciones: ['WHERE cliente.codigo_empleado_rep_ventas IS NULL', 'WHERE cliente.codigo_cliente IS NULL', 'WHERE empleado.codigo_jefe IS NULL'],
+          opciones: ['WHERE cliente.codigo_empleado_rep_ventas IS NULL', 'WHERE cliente.codigo_cliente = 0', 'WHERE empleado.codigo_jefe IS NULL'],
           correctas: [0],
           explicacion: 'Si no hay cliente asociado, la columna que venía de `cliente` queda NULL.'
         }
@@ -5068,8 +5299,9 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       criterios: [
         { etiqueta: 'Usa empleado como tabla base', test: /from\s+empleado\b/ },
         { etiqueta: 'Hace LEFT JOIN con cliente', test: /left\s+join\s+cliente\b/ },
-        { etiqueta: 'Filtra la clave del representante IS NULL', test: /is\s+null/ },
-        { etiqueta: 'Usa codigo_empleado_rep_ventas', test: /codigo_empleado_rep_ventas/ }
+        { etiqueta: 'Filtra una columna de cliente IS NULL', test: (_n, crudo) => tp7TieneIsNullDe(crudo, 'cliente') },
+        { etiqueta: 'Relaciona cliente con empleado', test: (_n, crudo) => tp7Relaciona(crudo, 'cliente', 'codigo_empleado_rep_ventas', 'empleado', 'codigo_empleado') },
+        { etiqueta: 'Muestra al menos el nombre del empleado', test: (n) => tp7SeleccionaColumna(n, 'nombre') }
       ],
       resultado: {
         columnas: ['nombre', 'apellido1'],
@@ -5083,7 +5315,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       nivel: 3,
       titulo: 'Sin pagos y sin pedidos',
       conceptos: ['dos LEFT JOIN', 'dos IS NULL'],
-      enunciado: 'Devuelve un listado que muestre los clientes que **no han realizado ningún pago y los que no han realizado ningún pedido**.',
+      enunciado: 'Devuelve un listado que muestre los clientes que **no han realizado ningún pago y los que no han realizado ningún pedido**. Siguiendo la solución de referencia del TP, interpretá que deben faltar **las dos cosas**: ni pago ni pedido.',
       guia: {
         base: {
           pregunta: '¿Qué tabla querés conservar?',
@@ -5111,8 +5343,10 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
         { etiqueta: 'Usa cliente como tabla base', test: /from\s+cliente\b/ },
         { etiqueta: 'Hace LEFT JOIN con pedido', test: /left\s+join\s+pedido\b/ },
         { etiqueta: 'Hace LEFT JOIN con pago', test: /left\s+join\s+pago\b/ },
-        { etiqueta: 'Exige las dos ausencias con IS NULL', test: (n) => (n.match(/is\s+null/g) || []).length >= 2 },
-        { etiqueta: 'Combina las condiciones con AND', test: /is\s+null[^]*and[^]*is\s+null/ }
+        { etiqueta: 'Filtra una columna de pedido IS NULL', test: (_n, crudo) => tp7TieneIsNullDe(crudo, 'pedido') },
+        { etiqueta: 'Filtra una columna de pago IS NULL', test: (_n, crudo) => tp7TieneIsNullDe(crudo, 'pago') },
+        { etiqueta: 'Combina las dos ausencias con AND', test: (_n, crudo) => /is\s+null[^]*\band\b[^]*is\s+null/.test(crudo) },
+        { etiqueta: 'Muestra el nombre del cliente', test: (n) => tp7SeleccionaColumna(n, 'nombre_cliente') }
       ],
       resultado: {
         columnas: ['nombre_cliente'],
@@ -5152,7 +5386,8 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: 'SELECT COUNT(*) AS num_empleados FROM empleado;',
       criterios: [
         { etiqueta: 'Usa la tabla empleado', test: /from\s+empleado\b/ },
-        { etiqueta: 'Usa COUNT', test: /count\s*\(/ }
+        { etiqueta: 'Usa COUNT', test: /count\s*\(/ },
+        { etiqueta: 'Cuenta toda la tabla, sin filtrar', test: (_n, crudo) => !/\b(where|group\s+by|having|limit)\b/.test(crudo) }
       ],
       resultado: {
         columnas: ['num_empleados'],
@@ -5192,6 +5427,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: 'SELECT pais, COUNT(*) AS num_clientes FROM cliente GROUP BY pais;',
       criterios: [
         { etiqueta: 'Usa la tabla cliente', test: /from\s+cliente\b/ },
+        { etiqueta: 'Muestra el país', test: (n) => tp7SeleccionaColumna(n, 'pais') },
         { etiqueta: 'Usa COUNT', test: /count\s*\(/ },
         { etiqueta: 'Agrupa por país', test: /group\s+by\s+pais/ }
       ],
@@ -5233,6 +5469,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: 'SELECT estado, COUNT(*) AS num_pedidos FROM pedido GROUP BY estado ORDER BY num_pedidos DESC;',
       criterios: [
         { etiqueta: 'Usa la tabla pedido', test: /from\s+pedido\b/ },
+        { etiqueta: 'Muestra el estado', test: (n) => tp7SeleccionaColumna(n, 'estado') },
         { etiqueta: 'Usa COUNT', test: /count\s*\(/ },
         { etiqueta: 'Agrupa por estado', test: /group\s+by\s+estado/ },
         { etiqueta: 'Ordena de mayor a menor', test: /order\s+by[^]*desc/ }
@@ -5277,8 +5514,9 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
         { etiqueta: 'Usa detalle_pedido', test: /from\s+detalle_pedido\b/ },
         { etiqueta: 'Usa SUM', test: /sum\s*\(/ },
         { etiqueta: 'Multiplica precio_unidad por cantidad', test: /precio_unidad\s*\*\s*cantidad|cantidad\s*\*\s*precio_unidad/ },
-        { etiqueta: 'Calcula el IVA del 21%', test: /0?\.21|21\s*\/\s*100/ },
-        { etiqueta: 'Calcula el total con IVA', test: /1\.21|\+\s*0?\.21|iva|total/ }
+        { etiqueta: 'Muestra la base imponible sin IVA', test: (n) => tp7TieneBaseImponible(n) },
+        { etiqueta: 'Calcula el IVA del 21%', test: (n) => tp7TieneIva21(n) },
+        { etiqueta: 'Calcula el total con IVA', test: (n) => tp7TieneTotalConIva(n) }
       ],
       resultado: {
         columnas: ['base_imponible', 'iva', 'total_facturado'],
@@ -5319,10 +5557,12 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       criterios: [
         { etiqueta: 'Usa detalle_pedido', test: /from\s+detalle_pedido\b/ },
         { etiqueta: 'Une con producto', test: /join\s+producto\b/ },
-        { etiqueta: 'Agrupa por producto', test: /group\s+by/ },
-        { etiqueta: 'Filtra grupos con HAVING', test: /having/ },
-        { etiqueta: 'Usa SUM', test: /sum\s*\(/ },
-        { etiqueta: 'Exige más de 3000', test: /3000/ }
+        { etiqueta: 'Agrupa por producto', test: /group\s+by[^]*\b(?:nombre|codigo_producto)\b/ },
+        { etiqueta: 'Calcula unidades vendidas', test: /sum\s*\(\s*cantidad\s*\)/ },
+        { etiqueta: 'Calcula el total facturado con precio y cantidad', test: (n) => /sum\(precio_unidad\*cantidad\)|sum\(cantidad\*precio_unidad\)/.test(n) },
+        { etiqueta: 'Filtra la facturación con HAVING', test: (n, crudo) => tp7FiltraFacturacion(n, crudo) },
+        { etiqueta: 'Calcula el total con IVA', test: (n) => tp7TieneTotalConIva(n) },
+        { etiqueta: 'Muestra el nombre y las unidades', test: (n) => tp7SeleccionaTodas(n, ['nombre', 'cantidad']) }
       ],
       resultado: {
         columnas: ['nombre', 'unidades_vendidas', 'total_facturado', 'total_con_iva'],
@@ -5362,8 +5602,8 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: 'SELECT nombre_cliente, limite_credito FROM cliente WHERE limite_credito = (SELECT MAX(limite_credito) FROM cliente);',
       criterios: [
         { etiqueta: 'Usa la tabla cliente', test: /from\s+cliente\b/ },
-        { etiqueta: 'Usa limite_credito', test: /limite_credito/ },
-        { etiqueta: 'Compara con MAX o usa ORDER BY ... LIMIT 1', test: (n) => /max\s*\(\s*limite_credito\s*\)/.test(n) || /order\s+by\s+limite_credito\s+desc\s+limit\s+1/.test(n) }
+        { etiqueta: 'Muestra el nombre del cliente', test: (n) => tp7SeleccionaColumna(n, 'nombre_cliente') },
+        { etiqueta: 'Compara con MAX o usa ORDER BY ... LIMIT 1', test: (n) => /limite_credito\s*(?:=|in)\s*\(\s*select\s+max\(\s*limite_credito\s*\)\s*from\s+cliente\s*\)/.test(n) || /order\s+by\s+limite_credito\s+desc\s+limit\s+1/.test(n) }
       ],
       resultado: {
         columnas: ['nombre_cliente', 'limite_credito'],
@@ -5403,8 +5643,8 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: 'SELECT nombre, precio_venta FROM producto WHERE precio_venta = (SELECT MAX(precio_venta) FROM producto);',
       criterios: [
         { etiqueta: 'Usa la tabla producto', test: /from\s+producto\b/ },
-        { etiqueta: 'Usa precio_venta', test: /precio_venta/ },
-        { etiqueta: 'Compara con MAX o usa ORDER BY ... LIMIT 1', test: (n) => /max\s*\(\s*precio_venta\s*\)/.test(n) || /order\s+by\s+precio_venta\s+desc\s+limit\s+1/.test(n) }
+        { etiqueta: 'Muestra el nombre del producto', test: (n) => tp7SeleccionaColumna(n, 'nombre') },
+        { etiqueta: 'Compara con MAX o usa ORDER BY ... LIMIT 1', test: (n) => /precio_venta\s*(?:=|in)\s*\(\s*select\s+max\(\s*precio_venta\s*\)\s*from\s+producto\s*\)/.test(n) || /order\s+by\s+precio_venta\s+desc\s+limit\s+1/.test(n) }
       ],
       resultado: {
         columnas: ['nombre', 'precio_venta'],
@@ -5427,13 +5667,13 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
           explicacion: 'Querés el nombre del cliente; `pago` solo aporta los códigos que hay que excluir.'
         },
         union: {
-          pregunta: '¿Cómo obtenés los clientes que sí pagaron?',
-          opciones: ['Con una subconsulta', 'Con un JOIN con pago', 'No hace falta mirar pago'],
+          pregunta: '¿Qué herramienta pide el enunciado para obtener los clientes que sí pagaron?',
+          opciones: ['Una subconsulta con SELECT ... FROM pago', 'Un JOIN con pago', 'No hace falta mirar pago'],
           correctas: [0],
           explicacion: 'La subconsulta devuelve los `codigo_cliente` que aparecen en `pago`.'
         },
         filtro: {
-          pregunta: '¿Qué cierre pide el enunciado?',
+          pregunta: '¿Qué cierre pide el enunciado (sección NOT IN)?',
           opciones: ['WHERE codigo_cliente NOT IN (SELECT codigo_cliente FROM pago)', 'WHERE codigo_cliente IN (SELECT codigo_cliente FROM pago)', 'LEFT JOIN pago ... IS NULL'],
           correctas: [0],
           explicacion: '`NOT IN` excluye los códigos que aparecen en la subconsulta.'
@@ -5444,6 +5684,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: 'SELECT nombre_cliente FROM cliente WHERE codigo_cliente NOT IN (SELECT codigo_cliente FROM pago);',
       criterios: [
         { etiqueta: 'Usa la tabla cliente', test: /from\s+cliente\b/ },
+        { etiqueta: 'Muestra el nombre del cliente', test: (n) => tp7SeleccionaColumna(n, 'nombre_cliente') },
         { etiqueta: 'Usa NOT IN con una subconsulta', test: /not\s+in\s*\(\s*select/ },
         { etiqueta: 'La subconsulta consulta pago', test: /from\s+pago\b/ },
         { etiqueta: 'Compara codigo_cliente', test: /codigo_cliente/ }
@@ -5476,7 +5717,7 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
         },
         filtro: {
           pregunta: '¿Qué condición expresa “nunca apareció”?',
-          opciones: ['WHERE NOT EXISTS (SELECT 1 FROM detalle_pedido d WHERE d.codigo_producto = p.codigo_producto)', 'WHERE codigo_producto NOT IN (SELECT codigo_producto FROM detalle_pedido)', 'WHERE EXISTS (SELECT 1 FROM detalle_pedido d WHERE d.codigo_producto = p.codigo_producto)'],
+          opciones: ['WHERE NOT EXISTS (SELECT 1 FROM detalle_pedido d WHERE d.codigo_producto = p.codigo_producto)', 'WHERE codigo_producto IN (SELECT codigo_producto FROM detalle_pedido)', 'WHERE EXISTS (SELECT 1 FROM detalle_pedido d WHERE d.codigo_producto = p.codigo_producto)'],
           correctas: [0],
           explicacion: '`NOT EXISTS` es verdadero cuando la subconsulta no encuentra ninguna línea para ese producto.'
         }
@@ -5486,9 +5727,10 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: 'SELECT p.nombre FROM producto p WHERE NOT EXISTS (SELECT 1 FROM detalle_pedido d WHERE d.codigo_producto = p.codigo_producto);',
       criterios: [
         { etiqueta: 'Usa producto como tabla base', test: /from\s+producto\b/ },
+        { etiqueta: 'Muestra el nombre del producto', test: (n) => tp7SeleccionaColumna(n, 'nombre') },
         { etiqueta: 'Usa NOT EXISTS', test: /not\s+exists\s*\(/ },
-        { etiqueta: 'La subconsulta consulta detalle_pedido', test: /from\s+detalle_pedido\b/ },
-        { etiqueta: 'Correlaciona por codigo_producto', test: /codigo_producto/ }
+        { etiqueta: 'La subconsulta consulta detalle_pedido', test: (_n, crudo) => tp7TieneSubconsultaExists(crudo, true, 'detalle_pedido') },
+        { etiqueta: 'Correlaciona por codigo_producto', test: (_n, crudo) => tp7CorrelacionaExists(crudo, true, 'producto', 'codigo_producto', 'detalle_pedido', 'codigo_producto') }
       ],
       resultado: {
         columnas: ['nombre'],
@@ -5528,9 +5770,12 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: 'SELECT c.nombre_cliente FROM cliente c WHERE EXISTS (SELECT 1 FROM pedido p WHERE p.codigo_cliente = c.codigo_cliente) AND NOT EXISTS (SELECT 1 FROM pago g WHERE g.codigo_cliente = c.codigo_cliente);',
       criterios: [
         { etiqueta: 'Usa cliente como tabla base', test: /from\s+cliente\b/ },
-        { etiqueta: 'Usa EXISTS para pedido', test: /exists\s*\(\s*select[^]*from\s+pedido/ },
-        { etiqueta: 'Usa NOT EXISTS para pago', test: /not\s+exists\s*\(\s*select[^]*from\s+pago/ },
-        { etiqueta: 'Combina con AND', test: /exists[^]*and[^]*not\s+exists|not\s+exists[^]*and[^]*exists/ }
+        { etiqueta: 'Muestra el nombre del cliente', test: (n) => tp7SeleccionaColumna(n, 'nombre_cliente') },
+        { etiqueta: 'Usa EXISTS para pedido', test: (_n, crudo) => tp7TieneSubconsultaExists(crudo, false, 'pedido') },
+        { etiqueta: 'Usa NOT EXISTS para pago', test: (_n, crudo) => tp7TieneSubconsultaExists(crudo, true, 'pago') },
+        { etiqueta: 'Correlaciona pedido con cliente', test: (_n, crudo) => tp7CorrelacionaExists(crudo, false, 'cliente', 'codigo_cliente', 'pedido', 'codigo_cliente') },
+        { etiqueta: 'Correlaciona pago con cliente', test: (_n, crudo) => tp7CorrelacionaExists(crudo, true, 'cliente', 'codigo_cliente', 'pago', 'codigo_cliente') },
+        { etiqueta: 'Combina las dos condiciones con AND', test: (n) => /\)\s*and\s*\(?\s*(?:not\s+)?exists\s*\(/.test(n) }
       ],
       resultado: {
         columnas: ['nombre_cliente'],
@@ -5570,9 +5815,10 @@ INSERT INTO DETALLE_PED (NUMPED, NUMART, CANTIDAD) VALUES
       solucion: 'SELECT p.nombre FROM producto p WHERE EXISTS (SELECT 1 FROM detalle_pedido d WHERE d.codigo_producto = p.codigo_producto);',
       criterios: [
         { etiqueta: 'Usa producto como tabla base', test: /from\s+producto\b/ },
-        { etiqueta: 'Usa EXISTS', test: /exists\s*\(/ },
-        { etiqueta: 'La subconsulta consulta detalle_pedido', test: /from\s+detalle_pedido\b/ },
-        { etiqueta: 'Correlaciona por codigo_producto', test: /codigo_producto/ }
+        { etiqueta: 'Muestra el nombre del producto', test: (n) => tp7SeleccionaColumna(n, 'nombre') },
+        { etiqueta: 'Usa EXISTS', test: (n) => tp7ExistePositivo(n) },
+        { etiqueta: 'La subconsulta consulta detalle_pedido', test: (_n, crudo) => tp7TieneSubconsultaExists(crudo, false, 'detalle_pedido') },
+        { etiqueta: 'Correlaciona por codigo_producto', test: (_n, crudo) => tp7CorrelacionaExists(crudo, false, 'producto', 'codigo_producto', 'detalle_pedido', 'codigo_producto') }
       ],
       resultado: {
         columnas: ['nombre'],
@@ -7948,11 +8194,12 @@ d) Trabajar en una sola rama para siempre
 
   function tp7Evaluar(texto, ejercicio) {
     const normal = normalizarSqlTp7(texto);
+    const crudo = tp7SqlCrudo(texto);
     const criterios = (ejercicio.criterios || []).map((criterio) => {
       let ok = false;
       try {
         ok = typeof criterio.test === 'function'
-          ? criterio.test(normal)
+          ? criterio.test(normal, crudo)
           : criterio.test.test(normal);
       } catch {
         ok = false;
@@ -8271,9 +8518,9 @@ pedido 1 ── N detalle_pedido N ── 1 producto N ── 1 gama_producto</p
     const guia = state.tp7.guia || { base: null, union: null, filtro: null };
     const resultado = state.tp7.guiaResultado;
     const pasos = [
-      ['base', '1'],
-      ['union', '2'],
-      ['filtro', '3']
+      ['base', '1', 'Tabla base'],
+      ['union', '2', 'Conexión'],
+      ['filtro', '3', 'Filtro o cierre']
     ];
 
     return `
@@ -8282,13 +8529,20 @@ pedido 1 ── N detalle_pedido N ── 1 producto N ── 1 gama_producto</p
           <h2 class="seccion-subtitulo">Paso 1 · Pensá la estrategia</h2>
           <span class="badge ${resultado?.ok ? 'badge-ok' : 'badge-info'}">${resultado?.ok ? 'Razonamiento listo' : 'Antes de escribir'}</span>
         </div>
-        <p class="texto-chico">Elegí una opción en cada paso. No hace falta adivinar la sintaxis: primero decidí qué tabla, qué conexión y qué filtro necesitás.</p>
-        ${pasos.map(([campo, numero]) => {
+        <div class="tp7-consigna" role="note">
+          <span class="tp7-consigna-etiqueta">Consigna</span>
+          <p><strong>Leé el enunciado y respondé estas tres preguntas antes de escribir SQL.</strong> Marcá una opción en cada una y después usá “Comprobar razonamiento”. Si algo no cierra, la app te explica qué revisar.</p>
+        </div>
+        ${pasos.map(([campo, numero, etiqueta]) => {
           const def = ejercicio.guia[campo];
           const seleccion = guia[campo];
           return `
             <div class="tp7-guia-paso">
-              <h3>${numero}. ${escapeHtml(def.pregunta)}</h3>
+              <div class="tp7-guia-paso-cabecera">
+                <span class="badge badge-gold">Paso ${numero}</span>
+                <span class="tp7-guia-etiqueta">${escapeHtml(etiqueta)}</span>
+              </div>
+              <h3>${escapeHtml(def.pregunta)}</h3>
               <div class="chips">
                 ${def.opciones.map((opcion, i) => {
                   const activa = seleccion === i;
