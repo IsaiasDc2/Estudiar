@@ -2019,6 +2019,12 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
   text-transform: uppercase;
 }
 .tp7-consigna p { margin: 0; color: var(--text); font-size: var(--text-small); }
+.tp7-consigna .tp7-consigna-enunciado { font-weight: 600; line-height: 1.5; }
+.tp7-consigna .tp7-consigna-instruccion {
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--gold-line);
+  color: var(--text-muted);
+}
 .tp7-guia-paso {
   display: grid;
   gap: 0.45rem;
@@ -8529,9 +8535,10 @@ pedido 1 ── N detalle_pedido N ── 1 producto N ── 1 gama_producto</p
           <h2 class="seccion-subtitulo">Paso 1 · Pensá la estrategia</h2>
           <span class="badge ${resultado?.ok ? 'badge-ok' : 'badge-info'}">${resultado?.ok ? 'Razonamiento listo' : 'Antes de escribir'}</span>
         </div>
-        <div class="tp7-consigna" role="note">
-          <span class="tp7-consigna-etiqueta">Consigna</span>
-          <p><strong>Leé el enunciado y respondé estas tres preguntas antes de escribir SQL.</strong> Marcá una opción en cada una y después usá “Comprobar razonamiento”. Si algo no cierra, la app te explica qué revisar.</p>
+        <div class="tp7-consigna" role="note" aria-label="Enunciado y consigna">
+          <span class="tp7-consigna-etiqueta">Enunciado a resolver</span>
+          <p class="tp7-consigna-enunciado">${renderMarkdown(ejercicio.enunciado)}</p>
+          <p class="tp7-consigna-instruccion"><strong>Consigna:</strong> usá este enunciado como contexto para las tres preguntas. Marcá una opción en cada paso y después usá “Comprobar razonamiento”. Si algo no cierra, la app te explica qué revisar.</p>
         </div>
         ${pasos.map(([campo, numero, etiqueta]) => {
           const def = ejercicio.guia[campo];
@@ -8702,7 +8709,6 @@ pedido 1 ── N detalle_pedido N ── 1 producto N ── 1 gama_producto</p
           <button type="button" class="btn btn-fantasma btn-chico" data-accion="tp7-lista">← TP7 Jardinería</button>
           <p class="eyebrow">${escapeHtml(modulo?.titulo || 'TP7')} · Nivel ${ejercicio.nivel}${state.tp7.modoExamen ? ' · Modo examen' : ''}</p>
           <h1 class="titulo-pagina" id="titulo-pantalla" tabindex="-1">${escapeHtml(ejercicio.titulo)}</h1>
-          <p class="subtitulo">${renderMarkdown(ejercicio.enunciado)}</p>
         </div>
 
         <div class="actividad-barra">
